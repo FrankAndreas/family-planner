@@ -5,6 +5,9 @@ const en: typeof de = {
     calendar: {
         week: 'Week {{n}}',
         today: 'Today',
+        tomorrow: 'Tomorrow',
+        allDay: 'all day',
+        nothing: 'Nothing planned',
         back: 'Back',
         forward: 'Forward',
         settings: 'Settings',

@@ -3,6 +3,9 @@ const de = {
     calendar: {
         week: 'KW {{n}}',
         today: 'Heute',
+        tomorrow: 'Morgen',
+        allDay: 'ganztags',
+        nothing: 'Nichts geplant',
         back: 'Zurück',
         forward: 'Weiter',
         settings: 'Einstellungen',
