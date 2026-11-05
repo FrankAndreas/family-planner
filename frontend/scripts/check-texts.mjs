@@ -7,7 +7,7 @@ import ts from 'typescript';
 
 const SRC = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'src');
 // Every component and page
-const CHECKED = fs.readdirSync(SRC, { recursive: true }).filter(file => file.endsWith('.tsx')).sort();
+const CHECKED = fs.readdirSync(SRC, { recursive: true }).filter(file => file.endsWith('.tsx') && !file.endsWith('.test.tsx')).sort();
 const ATTRIBUTES = new Set(['placeholder', 'aria-label', 'title', 'alt', 'label']);
 const CALLS = new Set(['confirm', 'alert', 'setError', 'errorMessage', 'setMessage']);
 const PROPERTIES = new Set(['label', 'text', 'title', 'placeholder']);

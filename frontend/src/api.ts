@@ -1,6 +1,7 @@
 import axios from 'axios';
 import i18n from './i18n';
 import { loginAddress, type HubLinks } from './hubAddress';
+import type { CalendarInfo, Occurrence } from './types';
 
 // Same origin: Vite (dev, browser tests) or nginx (Docker) forwards /api to the backend. Viewing needs no login; the
 // settings use the family hub's cookie, which the browser sends by itself. The backend takes changes made with the
@@ -37,3 +38,31 @@ export function errorMessage(error: unknown): string {
 }
 
 export default api;
+
+// --- What the screens read (no login) ---
+
+
+type ApiOccurrence = {
+    key: string; title: string; start: string; end: string; all_day: boolean; location: string; description: string;
+    calendar_ids: number[];
+};
+type ApiCalendar = Omit<CalendarInfo, 'lastSuccessAt'> & { last_success_at: string | null };
+
+export async function fetchEvents(from: string, to: string): Promise<Occurrence[]> {
+    const { data } = await api.get<ApiOccurrence[]>('/api/events', { params: { from, to } });
+    return data.map((o) => ({
+        key: o.key, title: o.title, start: o.start, end: o.end, allDay: o.all_day,
+        location: o.location || undefined, description: o.description || undefined, calendarIds: o.calendar_ids,
+    }));
+}
+
+export async function fetchCalendars(): Promise<CalendarInfo[]> {
+    const { data } = await api.get<ApiCalendar[]>('/api/calendars');
+    return data.map(({ last_success_at, ...rest }) => ({ ...rest, lastSuccessAt: last_success_at }));
+}
+
+export type PublicConfig = { language: 'de' | 'en'; family_color: string; synced_at: string | null };
+
+export async function fetchConfig(): Promise<PublicConfig> {
+    return (await api.get<PublicConfig>('/api/config')).data;
+}
