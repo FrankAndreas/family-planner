@@ -128,3 +128,13 @@ def test_not_a_calendar_raises(body):
 
 def test_empty_vcalendar_gives_empty_list():
     assert ics.parse(vcal(), WINDOW) == []
+
+
+def test_one_broken_event_skipped_others_imported():
+    text = vcal(
+        vevent("bad-start@test", "DTSTART:2026111"),
+        vevent("bad-rule@test", "DTSTART;TZID=Europe/Zurich:20261105T090000", "RRULE:FREQ=FOO;COUNT=3"),
+        vevent("bad-open-rule@test", "DTSTART;TZID=Europe/Zurich:20261105T090000", "RRULE:FREQ=FOO"),
+        vevent("good@test", "DTSTART;TZID=Europe/Zurich:20261105T090000", summary="Gut"),
+    )
+    assert [s.uid for s in ics.parse(text, WINDOW)] == ["good@test"]

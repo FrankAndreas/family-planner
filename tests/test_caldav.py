@@ -109,3 +109,34 @@ def test_password_never_in_error_or_log(db, web, caplog):
     source = add_source(db, password="geheim-1234")
     importer.sync_source(db, source)
     assert "geheim-1234" not in caplog.text and "geheim-1234" not in (source.last_error or "")
+
+
+def test_unchanged_calendar_is_read_again_when_the_window_moves_on(db, web, monkeypatch):
+    from datetime import timedelta
+
+    from app import config
+
+    web.dav.calendar("home", "Familie", {f"{HOME}home/a.ics": FUSSBALL})
+    source = add_source(db)
+    importer.sync_source(db, source)
+    enable_all(db, source)
+    importer.sync_source(db, source)
+    real = config.window
+    monkeypatch.setattr(config, "window", lambda now=None: tuple(edge + timedelta(days=1) for edge in real(now)))
+    importer.sync_source(db, source)
+    assert len(web.dav.reports) == 2
+
+
+def test_empty_listing_keeps_calendars_and_their_settings(db, web):
+    href = web.dav.calendar("home", "Familie", {f"{HOME}home/a.ics": FUSSBALL})
+    source = add_source(db)
+    importer.sync_source(db, source)
+    enable_all(db, source)
+    source.calendars[0].color = "#112233"
+    db.commit()
+    importer.sync_source(db, source)
+    del web.dav.calendars[href]
+    importer.sync_source(db, source)
+    db.expire_all()
+    assert source.last_error == "source_invalid"
+    assert [(c.name, c.color, len(c.series)) for c in source.calendars] == [("Familie", "#112233", 1)]

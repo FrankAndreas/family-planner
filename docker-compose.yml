@@ -28,6 +28,9 @@ services:
       - HUB_URL=${HUB_URL:-}
       - HUB_PUBLIC_URL=${HUB_PUBLIC_URL:-}
       - HUB_APP_KEY=${HUB_APP_KEY:-planner}
+      # The names browsers use for the planner, comma-separated (e.g. kalender.local.<domain>): any other name gets
+      # nothing, so a web page can't point a name of its own at the NAS and read the calendar. Empty: any name
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
       # de or en: the language of the wall (it has no login)
       - DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE:-de}
       - TZ=${TZ:-Europe/Zurich}

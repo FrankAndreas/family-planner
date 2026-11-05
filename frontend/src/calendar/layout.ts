@@ -1,9 +1,12 @@
-import { addDays, differenceInMinutes, startOfDay } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
 import type { Occurrence } from '../types';
 import { endOf, onDay, startOf } from './dates';
 
 export type PlacedEvent = { o: Occurrence; top: number; height: number; col: number; cols: number };
 export type Bar = { o: Occurrence; startCol: number; span: number; row: number };
+
+export const DAY_MINUTES = 24 * 60;
+export const minutesOfDay = (moment: Date) => moment.getHours() * 60 + moment.getMinutes();
 
 // Overlap is judged with at least this length, so short events next to each other don't sit on top of one another
 const MIN_MINUTES = 30;
@@ -19,12 +22,15 @@ export function crossesMidnight(o: Occurrence): boolean {
 // Timed events of one day, placed in minutes from 00:00; overlapping ones share the width in columns
 export function layoutTimed(occurrences: Occurrence[], day: Date): PlacedEvent[] {
     const dayStart = startOfDay(day);
-    const dayMinutes = differenceInMinutes(addDays(dayStart, 1), dayStart);
+    const nextDay = addDays(dayStart, 1);
+    // By the clock, as the grid's hour lines are: on the days the clocks change a day has 23 or 25 hours, and counting
+    // elapsed minutes would put every event after 03:00 an hour off
+    const clock = (moment: Date) => (moment < dayStart ? 0 : moment >= nextDay ? DAY_MINUTES : minutesOfDay(moment));
     const items = occurrences
         .filter((o) => !o.allDay && !crossesMidnight(o) && onDay(o, day))
         .map((o) => {
-            const top = Math.max(0, differenceInMinutes(startOf(o), dayStart));
-            const bottom = Math.min(dayMinutes, differenceInMinutes(endOf(o), dayStart));
+            const top = clock(startOf(o));
+            const bottom = clock(endOf(o));
             return { o, top, height: Math.max(0, bottom - top), until: Math.max(bottom, top + MIN_MINUTES) };
         })
         .sort((a, b) => a.top - b.top || b.until - a.until);

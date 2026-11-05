@@ -4,6 +4,7 @@ A series is one UID: the event with its recurrence rules and its moved or cancel
 together as one small VCALENDAR with the time zones it uses, so it can be expanded later exactly as the source meant
 it (spec "Sync rules"). Times keep their TZID; floating times count as the planner's zone (config.tz())."""
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
@@ -12,6 +13,8 @@ import x_wr_timezone
 from icalendar import Calendar
 
 from . import config
+
+logger = logging.getLogger(__name__)
 
 
 class NotACalendar(Exception):
@@ -127,22 +130,34 @@ def parse(text: str, window: tuple[datetime, datetime]) -> list[SeriesData]:
     window_start, window_end = (_utc(edge) for edge in window)
     found = []
     for uid, components in groups.items():
-        series = _series_calendar(components, timezones)
-        master = next((c for c in components if "RECURRENCE-ID" not in c), components[0])
-        if _unbounded(master):
-            first_start, last_end = _utc(master["DTSTART"].dt), None
-        else:
-            spans = [
-                (_utc(o["DTSTART"].dt), _utc(_end(o, o["DTSTART"].dt)))
-                for o in recurring_ical_events.of(series).all()
-            ]
-            if not spans:
-                continue
-            first_start, last_end = min(s for s, _ in spans), max(e for _, e in spans)
-        if first_start >= window_end or (last_end is not None and last_end < window_start):
+        try:
+            item = _series(uid, components, timezones, window, window_start, window_end)
+        except Exception as error:  # one broken event (a bad date, a bad rule) must not hold up the whole calendar
+            logger.warning("Skipped an event that can't be read (%s)", type(error).__name__)
             continue
-        found.append(SeriesData(uid, series.to_ical().decode(), first_start, last_end))
+        if item is not None:
+            found.append(item)
     return found
+
+
+def _series(uid: str, components, timezones: dict, window, window_start: datetime, window_end: datetime):
+    series = _series_calendar(components, timezones)
+    master = next((c for c in components if "RECURRENCE-ID" not in c), components[0])
+    if _unbounded(master):
+        first_start, last_end = _utc(master["DTSTART"].dt), None
+        # Expanding it once proves the rule can be expanded later, when a screen asks
+        recurring_ical_events.of(series).between(*window)
+    else:
+        spans = [
+            (_utc(o["DTSTART"].dt), _utc(_end(o, o["DTSTART"].dt)))
+            for o in recurring_ical_events.of(series).all()
+        ]
+        if not spans:
+            return None
+        first_start, last_end = min(s for s, _ in spans), max(e for _, e in spans)
+    if first_start >= window_end or (last_end is not None and last_end < window_start):
+        return None
+    return SeriesData(uid, series.to_ical().decode(), first_start, last_end)
 
 
 def expand(series_ics: str, start: datetime, end: datetime) -> list[Occurrence]:

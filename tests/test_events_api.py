@@ -100,3 +100,14 @@ def test_config(client, db):
 def test_hub_links(client):
     body = client.get("/api/hub").json()
     assert body["login_url"] and body["logout_url"].endswith("/logout")
+
+
+def test_a_bad_stored_series_does_not_break_the_wall(client, db):
+    from app import models
+
+    calendar = add_calendar(db, INVITE)
+    broken = ("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:bad@test\r\n"
+              "DTSTART:20261101T090000Z\r\nRRULE:FREQ=FOO\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+    db.add(models.Series(calendar_id=calendar.id, uid="bad@test", ics=broken, first_start=models.utcnow().replace(year=2026, month=11, day=1)))
+    db.commit()
+    assert [e["title"] for e in events(client)] == ["Elternabend"]

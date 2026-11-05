@@ -1,12 +1,15 @@
 """What the screens show for a range: every visible calendar's series expanded, one entry per event even when it is
 in several calendars (an invite: same UID, same start), listing all of them so the screen shows each one's colour."""
 
+import logging
 from datetime import UTC, date, datetime, time
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from . import config, ics, models
+
+logger = logging.getLogger(__name__)
 
 
 def _iso(value) -> str:
@@ -30,7 +33,12 @@ def between(db: Session, start: date, end: date) -> list[dict]:
     )
     merged: dict[str, dict] = {}
     for row in rows:
-        for occurrence in ics.expand(row.ics, begin, finish):
+        try:
+            expanded = ics.expand(row.ics, begin, finish)
+        except Exception as error:  # one series that can't be expanded must not leave the wall empty
+            logger.warning("Calendar %s: skipped a series that can't be expanded (%s)", row.calendar_id, type(error).__name__)
+            continue
+        for occurrence in expanded:
             key = f"{occurrence.uid}|{_iso(occurrence.start)}"
             entry = merged.get(key)
             if entry is None:

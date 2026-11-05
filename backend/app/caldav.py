@@ -131,6 +131,10 @@ def sync(db: Session, source: models.Source, force: bool = False) -> None:
             source.base_url = _home(client)
         remote = {c.href: c for c in _calendars(client, source.base_url)}
         kept = {c.remote_id: c for c in source.calendars}
+        # An account without a single calendar is far more likely a hiccup at iCloud than the truth: keep everything
+        # (and the parents' settings for each calendar) until it lists calendars again
+        if kept and not remote:
+            raise SourceError("source_invalid")
         for href, calendar in kept.items():
             if href not in remote:
                 db.delete(calendar)
@@ -140,9 +144,12 @@ def sync(db: Session, source: models.Source, force: bool = False) -> None:
                 db.add(models.Calendar(source_id=source.id, remote_id=href, name=found.name, ctag=None, enabled=False))
                 continue
             calendar.name = found.name
-            if not calendar.enabled or (not force and found.ctag is not None and found.ctag == calendar.ctag):
+            # With the window's first day: an unchanged calendar is still read once a day, as events far ahead move
+            # into the window (and old ones out)
+            marker = f"{found.ctag}|{config.window()[0].date()}" if found.ctag is not None else None
+            if not calendar.enabled or (not force and marker is not None and marker == calendar.ctag):
                 continue
             series, hrefs = _events(client, href)
-            replace_series(db, calendar, series, ctag=found.ctag or "", hrefs=hrefs)
+            replace_series(db, calendar, series, ctag=marker or "", hrefs=hrefs)
         db.commit()
         db.refresh(source)

@@ -48,3 +48,19 @@ describe('allDayBars', () => {
         expect(allDayBars([occ('late', '2026-11-05T22:00:00+01:00', '2026-11-06T00:00:00+01:00')], week)).toEqual([]);
     });
 });
+
+describe('layoutTimed on the days the clocks change', () => {
+    it('places events by the clock on 25 October 2026 (25-hour day)', () => {
+        const placed = layoutTimed([
+            occ('ten', '2026-10-25T10:00:00+01:00', '2026-10-25T11:00:00+01:00'),
+            occ('late', '2026-10-25T23:00:00+01:00', '2026-10-26T00:00:00+01:00'),
+        ], d(2026, 10, 25));
+        const by = Object.fromEntries(placed.map((p) => [p.o.key, p]));
+        expect([by.ten.top, by.ten.height]).toEqual([600, 60]);
+        expect([by.late.top, by.late.height]).toEqual([1380, 60]);
+    });
+    it('places events by the clock on 28 March 2027 (23-hour day)', () => {
+        const [ten] = layoutTimed([occ('ten', '2027-03-28T10:00:00+02:00', '2027-03-28T11:00:00+02:00')], d(2027, 3, 28));
+        expect([ten.top, ten.height]).toEqual([600, 60]);
+    });
+});

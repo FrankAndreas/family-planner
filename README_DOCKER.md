@@ -39,9 +39,11 @@ about 80 MB.
    file the backend doesn't start, and its log says why.
 4. **Create `.env`:**
    ```bash
-   printf 'PUID=1031\nPGID=100\nPORT=8090\nHUB_URL=http://<NAS_IP>:8086\nHUB_PUBLIC_URL=https://home.local.<domain>\n' | sudo tee .env
+   printf 'PUID=1031\nPGID=100\nPORT=8090\nHUB_URL=http://<NAS_IP>:8086\nHUB_PUBLIC_URL=https://home.local.<domain>\nALLOWED_HOSTS=kalender.local.<domain>\n' | sudo tee .env
    sudo chmod 600 .env
    ```
+   `ALLOWED_HOSTS` lists the names the planner answers under. Any other name gets nothing, so a web page opened at
+   home can't point a name of its own at the NAS and read the calendar (the wall needs no login).
 5. **Start it:** `sudo docker-compose pull && sudo docker-compose up -d` (or as a Project in Container Manager).
 
 ## HTTPS at home (needed)
