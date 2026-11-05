@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from . import crypto, database, database_setup, hub
+from . import crypto, database, database_setup, hub, public_api
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,6 +32,9 @@ async def home_only(request: Request, call_next):
     if TUNNEL_HEADER in request.headers and request.url.path != "/health":
         return JSONResponse({"detail": "outside"}, status_code=403)
     return await call_next(request)
+
+
+app.include_router(public_api.router, prefix="/api")
 
 
 @app.get("/health")
