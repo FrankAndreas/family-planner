@@ -121,12 +121,14 @@ def test_patch_calendar_person_and_bad_color(client, web, db, family_hub):
     response = client.patch(f"/api/calendars/{calendar_id}", json={"person_id": lea.id, "visible": False},
                             headers=login())
     assert response.status_code == 200
+    db.expire_all()
     calendar = db.get(models.Calendar, calendar_id)
     assert (calendar.person_id, calendar.visible) == (lea.id, False)
     for bad in ("red", "#12345", "#GGGGGG"):
         response = client.patch(f"/api/calendars/{calendar_id}", json={"color": bad}, headers=login())
         assert response.status_code == 422 and response.json()["detail"] == "bad_color", bad
     assert client.patch(f"/api/calendars/{calendar_id}", json={"color": "#AABBCC"}, headers=login()).status_code == 200
+    db.expire_all()
     assert db.get(models.Calendar, calendar_id).color == "#aabbcc"
 
 
