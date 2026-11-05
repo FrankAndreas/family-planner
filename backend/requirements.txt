@@ -11,3 +11,5 @@ cryptography==50.0.2
 httpx==0.28.1
 icalendar==7.3.0
 recurring-ical-events==3.8.2
+# Google feeds may give the zone as X-WR-TIMEZONE only
+x-wr-timezone==2.0.1
