@@ -130,3 +130,14 @@ def test_credential_with_other_key_gives_source_key(db, web):
     db.commit()
     importer.sync_source(db, source)
     assert source.last_error == "source_key"
+
+
+def test_successful_sync_logs_no_secret(db, web, caplog):
+    """httpx logs every request with its full URL at INFO: the secret address must not reach the log."""
+    from app import logs
+
+    logs.configure()
+    caplog.set_level(logging.INFO)  # the root logger, as in the container; httpx keeps its own level
+    web.set(URL, ONE)
+    importer.sync_source(db, add_source(db))
+    assert "s3cr3t" not in caplog.text

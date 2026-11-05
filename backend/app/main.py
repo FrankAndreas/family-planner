@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from . import crypto, database, database_setup, hub, public_api, scheduler, settings_api
+from . import crypto, database, database_setup, hub, logs, public_api, scheduler, settings_api
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logs.configure()
 logger = logging.getLogger(__name__)
 
 # Without the key the stored calendar credentials can't be read: refuse to start, saying how to make one
