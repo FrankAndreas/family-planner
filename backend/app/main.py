@@ -1,9 +1,10 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from . import crypto, database, database_setup, hub, public_api
+from . import crypto, database, database_setup, hub, public_api, scheduler, settings_api
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -20,7 +21,16 @@ database_setup.setup(database.engine)
 
 logger.info("Family hub: %s (logins at %s, app key %s)", hub.hub_url(), hub.public_url(), hub.app_key())
 
-app = FastAPI(title="Family Planner API", version="0.1.0")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    scheduler.start()
+    yield
+    await scheduler.stop()
+
+
+app = FastAPI(title="Family Planner API", version="0.1.0", lifespan=lifespan)
 
 # Cloudflare sets this header on everything through its tunnel. The planner is for the home network only and has no
 # tunnel route; should one appear by mistake, nothing but the health check answers through it
@@ -35,6 +45,7 @@ async def home_only(request: Request, call_next):
 
 
 app.include_router(public_api.router, prefix="/api")
+app.include_router(settings_api.router, prefix="/api")
 
 
 @app.get("/health")
