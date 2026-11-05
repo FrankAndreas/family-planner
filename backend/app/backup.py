@@ -38,6 +38,17 @@ def prune(keep: int = KEEP) -> None:
         old.unlink()
 
 
+def last_nightly_day():
+    """The day of the newest nightly backup (from its name), so a restart doesn't make another one that day."""
+    from datetime import date
+
+    newest = max(folder().glob("planner-nightly-*.db"), default=None)
+    if newest is None:
+        return None
+    stamp = newest.name.removeprefix("planner-nightly-")[:8]
+    return date(int(stamp[:4]), int(stamp[4:6]), int(stamp[6:8]))
+
+
 def nightly() -> None:
     make("nightly")
     prune()

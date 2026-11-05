@@ -1,0 +1,56 @@
+# Family Planner on a NAS (or any Docker host), with the published images.
+# Copy it to the app folder on the NAS as compose.yaml; see README_DOCKER.md.
+#
+# The backend runs as PUID:PGID from .env (default 999:999, the image's own
+# user). On a Synology, use a DSM user's IDs (see README_DOCKER.md). It never
+# runs as root. The ./data folder must exist and belong to that user before the
+# first start, and ./secrets/enc_key must hold the key (README_DOCKER.md).
+#
+# To try your local changes instead: docker compose up -d --build
+
+services:
+  backend:
+    image: ghcr.io/frankandreas/family-planner/backend:latest
+    build: ./backend
+    container_name: planner-backend
+    user: "${PUID:-999}:${PGID:-999}"
+    volumes:
+      - ./data:/app/data          # SQLite database and its backups
+    secrets:
+      - enc_key
+    environment:
+      - DATABASE_URL=sqlite:///./data/planner.db
+      - DATA_DIR=./data
+      # The key the calendar credentials are encrypted with (32 random bytes, base64). Keep a copy outside the NAS
+      - ENC_KEY_FILE=/run/secrets/enc_key
+      # The login for the settings is the family hub's (FrankAndreas/family-hub): how this backend reaches it
+      # (e.g. http://<NAS_IP>:8086), where browsers log in and out (https://home.local.<domain>), and this app's key
+      - HUB_URL=${HUB_URL:-}
+      - HUB_PUBLIC_URL=${HUB_PUBLIC_URL:-}
+      - HUB_APP_KEY=${HUB_APP_KEY:-planner}
+      # de or en: the language of the wall (it has no login)
+      - DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE:-de}
+      - TZ=${TZ:-Europe/Zurich}
+    mem_limit: 256m
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: ghcr.io/frankandreas/family-planner/frontend:latest
+    build: ./frontend
+    container_name: planner-frontend
+    ports:
+      - "${PORT:-8090}:8080"
+    depends_on:
+      - backend
+    mem_limit: 64m
+    restart: unless-stopped
+
+secrets:
+  enc_key:
+    file: ./secrets/enc_key

@@ -27,7 +27,7 @@ def backup_due(now: datetime, last_day) -> bool:
 
 
 async def _loop() -> None:
-    last_backup = datetime.now(config.tz()).date() if datetime.now(config.tz()).time() < BACKUP_AT else None
+    last_backup = backup.last_nightly_day()
     while True:
         try:
             await run_in_threadpool(_sync_all)

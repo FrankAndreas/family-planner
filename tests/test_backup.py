@@ -37,3 +37,23 @@ def test_no_backup_for_new_or_current_database(tmp_path):
     database_setup.setup(engine)
     database_setup.setup(engine)
     assert backups() == []
+
+
+def test_last_nightly_day_from_the_newest_file():
+    from datetime import date
+
+    assert backup.last_nightly_day() is None
+    backup.make("nightly")
+    backup.make("before-migration")
+    assert backup.last_nightly_day() == date.today()
+
+
+def test_restart_after_3_does_not_back_up_again_the_same_day():
+    from datetime import datetime
+
+    from app import scheduler
+
+    backup.make("nightly")
+    now = datetime.now(config.tz()).replace(hour=22)
+    assert scheduler.backup_due(now, backup.last_nightly_day()) is False
+    assert scheduler.backup_due(now, None) is True
