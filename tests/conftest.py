@@ -41,3 +41,21 @@ def db():
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+import fake_hub  # noqa: E402
+from app import hub, hub_people  # noqa: E402
+from helpers import ADMIN  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def family_hub(monkeypatch):
+    """A fake family hub instead of the real one (tests/fake_hub.py), with the parent Admin."""
+    fake = fake_hub.FakeHub()
+    monkeypatch.setattr(fake_hub, "current", fake)
+    monkeypatch.setattr(hub, "fetch_session", fake.fetch_session)
+    monkeypatch.setattr(hub, "fetch_people", fake.fetch_people)
+    fake.add(ADMIN, "PARENT")
+    yield fake
+    hub.forget()
+    hub_people.forget()
