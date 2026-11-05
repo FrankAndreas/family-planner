@@ -59,3 +59,18 @@ def family_hub(monkeypatch):
     yield fake
     hub.forget()
     hub_people.forget()
+
+
+import fake_sources  # noqa: E402
+from app import fetch  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def web(monkeypatch):
+    """Every outgoing request goes to a fake web (tests/fake_sources.py): no test reaches the network."""
+    fake = fake_sources.FakeWeb()
+    monkeypatch.setattr(fetch, "transport", httpx.MockTransport(fake.handler))
+    return fake
+
+
+import httpx  # noqa: E402
