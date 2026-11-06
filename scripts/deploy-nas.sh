@@ -9,7 +9,7 @@
 # Config:  .deploy.env in the repository root (gitignored, see .deploy.env.example),
 #          or environment variables, which take precedence:
 #          NAS_HOST      SSH target (user@host or an alias from ~/.ssh/config), required
-#          NAS_DIR       app folder on the NAS (default: /volume1/docker/familyplanner)
+#          NAS_DIR       app folder on the NAS (default: /volume1/docker/family-planner)
 #          NAS_PASS_CMD  optional command printing the NAS password (first line used),
 #                        e.g. "pass show nas"; it is piped straight to ssh and sudo
 # Options: --yes     don't ask for confirmation
@@ -45,7 +45,7 @@ if [ -f .deploy.env ]; then
         esac
     done < <(grep -E '^[A-Z_]+=' .deploy.env)
 fi
-NAS_DIR="${NAS_DIR:-/volume1/docker/familyplanner}"
+NAS_DIR="${NAS_DIR:-/volume1/docker/family-planner}"
 NAS_PASS_CMD="${NAS_PASS_CMD:-}"
 [ -n "${NAS_HOST:-}" ] || { echo "Set NAS_HOST in .deploy.env (see .deploy.env.example) or the environment" >&2; exit 2; }
 
