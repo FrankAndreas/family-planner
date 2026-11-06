@@ -25,3 +25,13 @@ test('switching views, an event\'s details, and back to the week after a while u
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId('day-header')).toHaveCount(7);
 });
+
+test('the wall keeps its week when the NAS can\'t be reached', async ({ page }) => {
+    await page.goto('/display?refresh=1000');
+    await expect(page.getByText('Zahnarzt')).toBeVisible();
+    await page.route('**/api/**', route => route.abort());
+    await expect(page.getByText(/last updated \d\d:\d\d/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Zahnarzt')).toBeVisible();
+    await page.unroute('**/api/**');
+    await expect(page.getByText(/last updated/)).toHaveCount(0, { timeout: 5_000 });
+});
