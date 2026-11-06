@@ -83,3 +83,10 @@ def test_hub_changes_follow(client, family_hub, db, change):
     else:
         family_hub.set_role("Lea", "PARENT")
         assert client.get("/api/sources", headers=login("Lea")).status_code == 200
+
+
+def test_unknown_hub_role_counts_as_child(client, family_hub):
+    family_hub.add("Gast", role="GUEST")
+    response = client.get("/api/sources", headers=login("Gast"))
+    assert response.status_code == 403 and response.json()["detail"] == "parents_only"
+    assert "Gast" in [p["name"] for p in client.get("/api/people", headers=login()).json()]

@@ -17,6 +17,14 @@ class Role(str, enum.Enum):
     PARENT = "PARENT"
     CHILD = "CHILD"
 
+    @classmethod
+    def from_hub(cls, value: str) -> "Role":
+        """The hub's role; one the planner doesn't know counts as a child (no settings)."""
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.CHILD
+
 
 class Person(Base):
     """A family member as the family hub lists them for the planner (a copy, refreshed by hub_people.py)."""
