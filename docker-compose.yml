@@ -24,7 +24,8 @@ services:
       # The key the calendar credentials are encrypted with (32 random bytes, base64). Keep a copy outside the NAS
       - ENC_KEY_FILE=/run/secrets/enc_key
       # The login for the settings is the family hub's (FrankAndreas/family-hub): how this backend reaches it
-      # (e.g. http://<NAS_IP>:8086), where browsers log in and out (https://home.local.<domain>), and this app's key
+      # (e.g. http://<NAS_IP>:8086), where browsers log in and out (https://home.local.<domain>), and this app's key:
+      # the hub tile's App-Schlüssel must be the same (README_DOCKER.md uses "kalender")
       - HUB_URL=${HUB_URL:-}
       - HUB_PUBLIC_URL=${HUB_PUBLIC_URL:-}
       - HUB_APP_KEY=${HUB_APP_KEY:-planner}

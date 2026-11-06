@@ -39,10 +39,11 @@ about 80 MB.
    file the backend doesn't start, and its log says why.
 4. **Create `.env`:**
    ```bash
-   printf 'PUID=1031\nPGID=100\nPORT=8090\nHUB_URL=http://<NAS_IP>:8086\nHUB_PUBLIC_URL=https://home.local.<domain>\nALLOWED_HOSTS=kalender.local.<domain>\n' | sudo tee .env
+   printf 'PUID=1031\nPGID=100\nPORT=8090\nHUB_URL=http://<NAS_IP>:8086\nHUB_PUBLIC_URL=https://home.local.<domain>\nHUB_APP_KEY=kalender\nALLOWED_HOSTS=kalender.local.<domain>\n' | sudo tee .env
    sudo chmod 600 .env
    ```
-   `ALLOWED_HOSTS` lists the names the planner answers under. Any other name gets nothing, so a web page opened at
+   `HUB_APP_KEY` is the planner's key in the family hub: the hub tile's **App-Schlüssel** must be exactly the same
+   (see "The family hub" below). `ALLOWED_HOSTS` lists the names the planner answers under. Any other name gets nothing, so a web page opened at
    home can't point a name of its own at the NAS and read the calendar (the wall needs no login).
 5. **Start it:** `sudo docker-compose pull && sudo docker-compose up -d` (or as a Project in Container Manager).
 
@@ -61,9 +62,21 @@ answers nothing that comes through the tunnel.
 
 ## The family hub
 
-In the hub's **Einstellungen → Apps**, add a tile for the planner: address `https://kalender.local.<domain>`, app key
-**`planner`**, everyone ticked. Viewing needs no login; only parents open the settings, after logging in at the hub.
-People, their colours and languages come from the hub.
+In the hub's **Einstellungen → Apps**, add a tile for the planner:
+
+- **Adresse:** `https://kalender.local.<domain>`
+- **App-Schlüssel:** `kalender`, exactly the value of `HUB_APP_KEY` in the planner's `.env`. The planner asks the hub
+  "may this person use the app `kalender`?", and the hub answers yes only for the tile with that key.
+- **Personen:** tick everyone. Only the people ticked here appear in the planner (to give calendars to), and only the
+  ticked parents can open its settings.
+
+Viewing needs no login; only parents open the settings, after logging in at the hub. People, their colours and
+languages come from the hub.
+
+**"Du hast keinen Zugang zum Familienkalender"** in the settings, even as a parent, means the hub found no tile for the
+planner's key, or you aren't ticked on it. Check that the tile's App-Schlüssel and `HUB_APP_KEY` are the same (a
+change to `.env` needs `sudo docker-compose up -d backend`), and that you are ticked. The planner remembers the hub's
+answer for about a minute, so reload once more after that.
 
 ## Adding calendars
 
