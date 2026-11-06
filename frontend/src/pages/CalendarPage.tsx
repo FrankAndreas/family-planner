@@ -56,8 +56,11 @@ export default function CalendarPage() {
 
     // The browser tests shorten the wait with ?idle=<ms>
     const idleMs = Number(params.get('idle')) || IDLE_MS;
+    // Counts the idle returns: each one scrolls the week back to its opening position
+    const [idleReturns, setIdleReturns] = useState(0);
     const backToWeek = useCallback(() => {
         setOpen(null);
+        setIdleReturns((n) => n + 1);
         go({ view: 'week', day: null });
     }, [go]);
     useIdleReturn(idleMs, onWall, backToWeek);
@@ -77,7 +80,7 @@ export default function CalendarPage() {
                 ) : view === 'agenda' ? (
                     <Agenda from={day} occurrences={occurrences} calendars={calendars} onOpen={setOpen} />
                 ) : (
-                    <TimeGrid days={shownDays} occurrences={occurrences} calendars={calendars} onOpen={setOpen} />
+                    <TimeGrid days={shownDays} occurrences={occurrences} calendars={calendars} onOpen={setOpen} scrollKey={idleReturns} />
                 )}
             </main>
             {open && <EventSheet o={open} calendars={calendars} onClose={() => setOpen(null)} />}

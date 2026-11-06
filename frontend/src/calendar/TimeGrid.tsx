@@ -15,6 +15,8 @@ type Props = {
     occurrences: Occurrence[];
     calendars: Map<number, CalendarInfo>;
     onOpen: (o: Occurrence) => void;
+    // A new value scrolls back to the opening position even after a hand scroll (the wall's idle return)
+    scrollKey?: number;
 };
 
 function useNow(): Date {
@@ -26,7 +28,7 @@ function useNow(): Date {
     return now;
 }
 
-export default function TimeGrid({ days, occurrences, calendars, onOpen }: Props) {
+export default function TimeGrid({ days, occurrences, calendars, onOpen, scrollKey = 0 }: Props) {
     const locale = useDateLocale();
     const now = useNow();
     const scroller = useRef<HTMLDivElement>(null);
@@ -34,17 +36,20 @@ export default function TimeGrid({ days, occurrences, calendars, onOpen }: Props
     const barRows = bars.reduce((rows, bar) => Math.max(rows, bar.row + 1), 0);
     const columns = `3.5rem repeat(${days.length}, minmax(0, 1fr))`;
 
-    // Opens at the morning's first event (at the latest 07:00); again only when other days are shown, not on every
-    // refresh, so a hand that scrolled isn't undone
+    // Opens at the morning's first event (at the latest 07:00), and follows events that sync in, until a hand
+    // scrolls; other days or a new scrollKey start over
     const firstHour = firstScrollHour(days, occurrences);
-    const shownDays = days.map((day) => day.getTime()).join();
-    const scrolledFor = useRef<string | null>(null);
+    const view = `${days.map((day) => day.getTime()).join()}|${scrollKey}`;
+    const handScrolled = useRef(false);
+    const shownView = useRef(view);
     useEffect(() => {
-        if (!scroller.current || scrolledFor.current === shownDays) return;
-        scroller.current.scrollTop = firstHour * HOUR_PX;
-        // Before the events are loaded the first position is a guess: scroll again once they are there
-        if (occurrences.length) scrolledFor.current = shownDays;
-    }, [shownDays, firstHour, occurrences.length]);
+        if (shownView.current !== view) {
+            shownView.current = view;
+            handScrolled.current = false;
+        }
+        if (scroller.current && !handScrolled.current) scroller.current.scrollTop = firstHour * HOUR_PX;
+    }, [view, firstHour]);
+    const byHand = () => { handScrolled.current = true; };
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -75,7 +80,8 @@ export default function TimeGrid({ days, occurrences, calendars, onOpen }: Props
                     );
                 })}
             </div>
-            <div ref={scroller} data-testid="time-scroller" className="min-h-0 flex-1 overflow-y-auto">
+            <div ref={scroller} data-testid="time-scroller" className="min-h-0 flex-1 overflow-y-auto"
+                 onPointerDown={byHand} onWheel={byHand} onTouchStart={byHand}>
                 <div className="relative grid" style={{ gridTemplateColumns: columns, height: 24 * HOUR_PX }}>
                     <div className="relative">
                         {Array.from({ length: 24 }, (_, hour) => (

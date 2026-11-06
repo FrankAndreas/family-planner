@@ -11,6 +11,7 @@ const de = {
         settings: 'Einstellungen',
         close: 'Schliessen',
         lastUpdated: 'zuletzt aktualisiert {{time}}',
+        lastUpdatedShort: 'Stand {{time}}',
         problem: 'Ein Kalender lässt sich gerade nicht aktualisieren',
         views: { day: 'Tag', '3day': '3 Tage', week: 'Woche', month: 'Monat', agenda: 'Agenda' },
         // On phones, where the five views have to fit next to «Heute»
