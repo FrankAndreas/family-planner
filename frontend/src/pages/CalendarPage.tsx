@@ -10,6 +10,7 @@ import EventSheet from '../calendar/EventSheet';
 import { days, isoDate, parseMoment, weekStart } from '../calendar/dates';
 import { useCalendarData } from '../calendar/useCalendarData';
 import { useIdleReturn } from '../calendar/useIdleReturn';
+import { useNightlyReload } from '../calendar/useNightlyReload';
 import MonthGrid from '../calendar/MonthGrid';
 import Agenda from '../calendar/Agenda';
 
@@ -60,6 +61,7 @@ export default function CalendarPage() {
         go({ view: 'week', day: null });
     }, [go]);
     useIdleReturn(idleMs, onWall, backToWeek);
+    useNightlyReload(onWall);
 
     const problem = failed || [...calendars.values()].some((c) => !c.ok);
     const shownDays = view === 'day' ? days(day, 1) : view === '3day' ? days(day, 3) : days(weekStart(day), 7);
