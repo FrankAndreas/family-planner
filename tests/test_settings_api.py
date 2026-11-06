@@ -173,3 +173,19 @@ def test_inactive_person_falls_back_to_family(client, web, db, family_hub):
     client.get("/api/people", headers=login())
     (item,) = client.get("/api/calendars").json()
     assert item["id"] == calendar.id and item["person"] is None
+
+
+def test_adding_an_invalid_url_is_422_source_invalid(client, db):
+    response = client.post("/api/sources", json={"kind": "google_ical", "name": "Mama",
+                                                 "url": "https://exa mple.com/\x00.ics"}, headers=login())
+    assert response.status_code == 422 and response.json()["detail"] == "source_invalid"
+    assert db.query(models.Source).count() == 0
+
+
+@pytest.mark.parametrize("field, value", [("url", "x" * 2001), ("apple_id", "a" * 201), ("password", "p" * 201),
+                                          ("name", "")])
+def test_source_patch_limits(client, web, field, value):
+    source_id = add_google(client, web).json()["id"]
+    response = client.patch(f"/api/sources/{source_id}", json={field: value}, headers=login())
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], list)  # refused by validation, before any source check

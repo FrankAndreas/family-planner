@@ -138,3 +138,36 @@ def test_one_broken_event_skipped_others_imported():
         vevent("good@test", "DTSTART;TZID=Europe/Zurich:20261105T090000", summary="Gut"),
     )
     assert [s.uid for s in ics.parse(text, WINDOW)] == ["good@test"]
+
+
+def test_utf8_bom_is_read():
+    text = "﻿" + vcal(vevent("bom@test", "DTSTART;TZID=Europe/Zurich:20261110T090000",
+                                  "DTEND;TZID=Europe/Zurich:20261110T100000"))
+    assert [s.uid for s in ics.parse(text, WINDOW)] == ["bom@test"]
+
+
+WEEKLY_FROM_10_NOV = ("DTSTART;TZID=Europe/Zurich:20261110T180000", "DTEND;TZID=Europe/Zurich:20261110T190000",
+                      "RRULE:FREQ=WEEKLY")
+
+
+def test_unbounded_series_with_override_before_first_start(db):
+    from app import occurrences as occ
+    from helpers import add_calendar
+
+    text = vcal(
+        vevent("chor@test", *WEEKLY_FROM_10_NOV, summary="Chor"),
+        vevent("chor@test", "RECURRENCE-ID;TZID=Europe/Zurich:20261110T180000",
+               "DTSTART;TZID=Europe/Zurich:20261108T180000", "DTEND;TZID=Europe/Zurich:20261108T190000",
+               summary="Chor (vorgezogen)"),
+    )
+    [series] = ics.parse(text, WINDOW)
+    assert series.first_start == datetime(2026, 11, 8, 17, 0)
+    add_calendar(db, text)
+    found = occ.between(db, date(2026, 11, 8), date(2026, 11, 9))
+    assert [e["start"] for e in found] == ["2026-11-08T18:00:00+01:00"]
+
+
+def test_unbounded_series_with_rdate_before_first_start():
+    text = vcal(vevent("chor@test", *WEEKLY_FROM_10_NOV, "RDATE;TZID=Europe/Zurich:20261105T180000"))
+    [series] = ics.parse(text, WINDOW)
+    assert series.first_start == datetime(2026, 11, 5, 17, 0)

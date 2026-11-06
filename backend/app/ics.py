@@ -90,6 +90,8 @@ def _unbounded(master) -> bool:
 
 
 def _read(text: str) -> Calendar:
+    # Some servers start the feed with a UTF-8 byte-order mark
+    text = text.removeprefix("\ufeff")
     if not text.lstrip().upper().startswith("BEGIN:VCALENDAR"):
         raise NotACalendar()
     try:
@@ -98,6 +100,17 @@ def _read(text: str) -> Calendar:
         raise NotACalendar() from None
     # Google feeds may carry the calendar's zone as X-WR-TIMEZONE for times written without one
     return x_wr_timezone.to_standard(calendar)
+
+
+def _starts(components):
+    """Every start a series names: each component's DTSTART and every RDATE (a period counts by its start)."""
+    for component in components:
+        yield component["DTSTART"].dt
+        rdates = component.get("RDATE")
+        for rdate in rdates if isinstance(rdates, list) else [rdates] if rdates is not None else []:
+            for item in rdate.dts:
+                value = item.dt
+                yield value[0] if isinstance(value, tuple) else value
 
 
 def _series_calendar(components, timezones: dict) -> Calendar:
@@ -144,7 +157,8 @@ def _series(uid: str, components, timezones: dict, window, window_start: datetim
     series = _series_calendar(components, timezones)
     master = next((c for c in components if "RECURRENCE-ID" not in c), components[0])
     if _unbounded(master):
-        first_start, last_end = _utc(master["DTSTART"].dt), None
+        # An occurrence can be moved, or added (RDATE), before the rule's first date
+        first_start, last_end = min(_utc(value) for value in _starts(components)), None
         # Expanding it once proves the rule can be expanded later, when a screen asks
         recurring_ical_events.of(series).between(*window)
     else:

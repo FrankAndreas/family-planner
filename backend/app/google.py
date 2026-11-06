@@ -21,6 +21,8 @@ def download(url: str) -> str:
     try:
         with fetch.client() as client:
             response = client.get(address(url))
+    except httpx.InvalidURL:  # not an httpx.HTTPError: an address that isn't one
+        raise SourceError("source_invalid") from None
     except (httpx.HTTPError, ValueError):
         raise SourceError("source_unreachable") from None
     if response.status_code >= 400:
