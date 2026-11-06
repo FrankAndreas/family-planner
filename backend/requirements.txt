@@ -1,0 +1,15 @@
+fastapi==0.162.0
+uvicorn==0.54.0
+sqlalchemy==2.1.6
+pydantic==2.14.2
+alembic==1.20.1
+# Time zone database for zoneinfo; the slim Docker image has none
+tzdata==2026.6
+# AES-256-GCM for the calendar credentials
+cryptography==50.0.2
+# Google's secret iCal addresses and iCloud's CalDAV
+httpx==0.28.1
+icalendar==7.3.0
+recurring-ical-events==3.8.2
+# Google feeds may give the zone as X-WR-TIMEZONE only
+x-wr-timezone==2.0.1
