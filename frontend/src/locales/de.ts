@@ -13,6 +13,8 @@ const de = {
         lastUpdated: 'zuletzt aktualisiert {{time}}',
         problem: 'Ein Kalender lässt sich gerade nicht aktualisieren',
         views: { day: 'Tag', '3day': '3 Tage', week: 'Woche', month: 'Monat', agenda: 'Agenda' },
+        // On phones, where the five views have to fit next to «Heute»
+        viewsShort: { day: 'Tag', '3day': '3T', week: 'Wo', month: 'Mo', agenda: 'Liste' },
     },
     settings: {
         title: 'Einstellungen',

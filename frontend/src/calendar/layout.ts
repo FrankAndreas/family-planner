@@ -73,3 +73,14 @@ export function allDayBars(occurrences: Occurrence[], days: Date[]): Bar[] {
         return { ...s, row };
     });
 }
+
+// Where the time grid opens: the earliest timed event that starts on one of the shown days, never later than 07:00.
+// The week is for looking ahead, so tomorrow's 06:30 matters more than the evening of today.
+export const LATEST_FIRST_HOUR = 7;
+export function firstScrollHour(days: Date[], occurrences: Occurrence[]): number {
+    const shown = new Set(days.map((day) => startOfDay(day).getTime()));
+    const hours = occurrences
+        .filter((o) => !o.allDay && shown.has(startOfDay(startOf(o)).getTime()))
+        .map((o) => startOf(o).getHours());
+    return Math.min(LATEST_FIRST_HOUR, ...hours);
+}

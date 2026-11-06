@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allDayBars, layoutTimed } from './layout';
+import { allDayBars, firstScrollHour, layoutTimed } from './layout';
 import { days } from './dates';
 import type { Occurrence } from '../types';
 
@@ -62,5 +62,33 @@ describe('layoutTimed on the days the clocks change', () => {
     it('places events by the clock on 28 March 2027 (23-hour day)', () => {
         const [ten] = layoutTimed([occ('ten', '2027-03-28T10:00:00+02:00', '2027-03-28T11:00:00+02:00')], d(2027, 3, 28));
         expect([ten.top, ten.height]).toEqual([600, 60]);
+    });
+});
+
+describe('firstScrollHour', () => {
+    const shownWeek = days(new Date(2026, 10, 2), 7);
+    const timed = (title: string, start: string, end: string): Occurrence =>
+        ({ key: `${title}|${start}`, title, start, end, allDay: false, calendarIds: [1] });
+
+    it('the week opens at the earliest timed event of the shown days', () => {
+        expect(firstScrollHour(shownWeek, [
+            timed('Schwimmen', '2026-11-03T06:30:00+01:00', '2026-11-03T07:30:00+01:00'),
+            timed('Team-Call', '2026-11-05T09:00:00+01:00', '2026-11-05T10:00:00+01:00'),
+        ])).toBe(6);
+    });
+
+    it('without early events it opens at 07:00', () => {
+        expect(firstScrollHour(shownWeek, [timed('Yoga', '2026-11-04T10:00:00+01:00', '2026-11-04T11:00:00+01:00')])).toBe(7);
+    });
+
+    it('an evening with no events still opens at 07:00', () => {
+        expect(firstScrollHour(days(new Date(2026, 10, 6), 1), [])).toBe(7);
+    });
+
+    it('all-day events and events of other days don\'t count', () => {
+        expect(firstScrollHour(days(new Date(2026, 10, 6), 1), [
+            { key: 'f|1', title: 'Ferien', start: '2026-11-06', end: '2026-11-07', allDay: true, calendarIds: [1] },
+            timed('Früh', '2026-11-07T05:00:00+01:00', '2026-11-07T06:00:00+01:00'),
+        ])).toBe(7);
     });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '../i18n';
-import TimeGrid from './TimeGrid';
+import TimeGrid, { HOUR_PX } from './TimeGrid';
 import { days } from './dates';
 import type { CalendarInfo, Occurrence } from '../types';
 
@@ -39,5 +39,11 @@ describe('TimeGrid', () => {
         render(<TimeGrid days={week} occurrences={[]} calendars={calendars} onOpen={() => {}} />);
         expect(screen.getAllByTestId('day-header').map((h) => h.textContent)).toEqual(
             ['Mo 2', 'Di 3', 'Mi 4', 'Do 5', 'Fr 6', 'Sa 7', 'So 8']);
+    });
+    it('opens scrolled to the earliest event of the shown days', () => {
+        const early: Occurrence = { key: 's|1', title: 'Schwimmen', start: '2026-11-03T06:30:00+01:00',
+            end: '2026-11-03T07:30:00+01:00', allDay: false, calendarIds: [1] };
+        render(<TimeGrid days={week} occurrences={[shared, early]} calendars={calendars} onOpen={() => {}} />);
+        expect(screen.getByTestId('time-scroller').scrollTop).toBe(6 * HOUR_PX);
     });
 });
