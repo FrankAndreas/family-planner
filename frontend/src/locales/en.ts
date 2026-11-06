@@ -12,6 +12,7 @@ const en: typeof de = {
         forward: 'Forward',
         settings: 'Settings',
         close: 'Close',
+        lastUpdated: 'last updated {{time}}',
         problem: 'A calendar can\'t be updated right now',
         views: { day: 'Day', '3day': '3 days', week: 'Week', month: 'Month', agenda: 'Agenda' },
     },

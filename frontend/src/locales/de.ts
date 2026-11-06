@@ -10,6 +10,7 @@ const de = {
         forward: 'Weiter',
         settings: 'Einstellungen',
         close: 'Schliessen',
+        lastUpdated: 'zuletzt aktualisiert {{time}}',
         problem: 'Ein Kalender lässt sich gerade nicht aktualisieren',
         views: { day: 'Tag', '3day': '3 Tage', week: 'Woche', month: 'Monat', agenda: 'Agenda' },
     },

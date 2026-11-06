@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { View } from '../types';
 import { isoWeek } from './dates';
 import { useDateLocale } from './locale';
+import LastUpdated from './LastUpdated';
 
 const VIEWS: View[] = ['day', '3day', 'week', 'month', 'agenda'];
 
@@ -11,6 +12,8 @@ type Props = {
     view: View;
     day: Date;
     problem: boolean;
+    // When the events were loaded, shown while the NAS can't be reached
+    lastUpdated: Date | null;
     onView: (view: View) => void;
     onStep: (direction: -1 | 1) => void;
     onToday: () => void;
@@ -18,7 +21,7 @@ type Props = {
 
 const button = 'min-h-12 min-w-12 rounded-lg px-3 text-base font-medium';
 
-export default function TopBar({ view, day, problem, onView, onStep, onToday }: Props) {
+export default function TopBar({ view, day, problem, lastUpdated, onView, onStep, onToday }: Props) {
     const { t } = useTranslation();
     const locale = useDateLocale();
     return (
@@ -35,6 +38,7 @@ export default function TopBar({ view, day, problem, onView, onStep, onToday }: 
                 <button type="button" className={`${button} bg-white/5`} aria-label={t('calendar.forward')} onClick={() => onStep(1)}>›</button>
             </div>
             <div className="flex-1" />
+            <LastUpdated at={lastUpdated} />
             {problem && (
                 <span className="text-xl text-amber-400" role="img" aria-label={t('calendar.problem')} title={t('calendar.problem')}>⚠</span>
             )}

@@ -37,7 +37,9 @@ export default function CalendarPage() {
     const dateParam = params.get('date');
     const day = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? parseMoment(dateParam) : startOfDay(new Date());
     const [open, setOpen] = useState<Occurrence | null>(null);
-    const { occurrences, calendars, failed } = useCalendarData(view, day);
+    // The browser tests shorten the refresh with ?refresh=<ms>
+    const refreshMs = Number(params.get('refresh')) || undefined;
+    const { occurrences, calendars, failed, loadedAt } = useCalendarData(view, day, refreshMs);
 
     useEffect(() => {
         fetchConfig().then((config) => applyLanguage(config.language)).catch(() => {});
@@ -64,7 +66,8 @@ export default function CalendarPage() {
 
     return (
         <div className="flex h-dvh flex-col">
-            <TopBar view={view} day={day} problem={problem} onView={(v) => go({ view: v })}
+            <TopBar view={view} day={day} problem={problem} lastUpdated={failed ? loadedAt : null}
+                    onView={(v) => go({ view: v })}
                     onStep={(direction) => go({ day: step(view, day, direction) })} onToday={() => go({ day: null })} />
             <main className="min-h-0 flex-1">
                 {view === 'month' ? (
