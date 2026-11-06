@@ -5,6 +5,7 @@ import { errorCode, errorMessage, fetchConfig, goToHub, goToHubLogout } from '..
 import { applyLanguage } from '../i18n';
 import SourceForm from '../settings/SourceForm';
 import SourceList from '../settings/SourceList';
+import ColorInput from '../settings/ColorInput';
 import { getMe, getPeople, getSources, setFamilyColor, type Person, type Source } from '../settings/settingsApi';
 
 type State =
@@ -99,8 +100,8 @@ export default function SettingsPage() {
                 <section className="glass-card flex flex-wrap items-center gap-3 p-4">
                     <label className="flex flex-1 items-center gap-3 text-base">
                         {t('settings.familyColor')}
-                        <input type="color" className="h-12 w-12 rounded" value={state.familyColor}
-                               onChange={(e) => { const color = e.target.value; void setFamilyColor(color).then(load); }} />
+                        <ColorInput value={state.familyColor} label={t('settings.familyColor')}
+                                    onCommit={(color) => { void setFamilyColor(color).then(load); }} />
                     </label>
                     <p className="text-sm text-slate-400">
                         {t('settings.hubNote')}{' '}

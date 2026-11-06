@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import ColorInput from './ColorInput';
 import type { Person, SourceCalendar } from './settingsApi';
 
 type Props = {
@@ -35,8 +36,8 @@ export default function CalendarRow({ calendar, people, familyColor, canEnable, 
             </label>
             <label className="flex items-center gap-2 text-sm text-slate-400">
                 {t('settings.color')}
-                <input type="color" className="h-12 w-12 rounded" value={color} disabled={!calendar.enabled}
-                       onChange={(e) => onChange({ color: e.target.value })} />
+                <ColorInput value={color} disabled={!calendar.enabled} label={t('settings.color')}
+                            onCommit={(next) => onChange({ color: next })} />
             </label>
             {calendar.color && (
                 <button type="button" className="min-h-12 rounded-lg bg-white/5 px-3 text-sm" onClick={() => onChange({ color: null })}>
