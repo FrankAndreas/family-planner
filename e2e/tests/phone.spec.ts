@@ -18,3 +18,14 @@ test('the phone top bar takes at most two rows', async ({ page }) => {
     expect(header!.height).toBeLessThanOrEqual(128);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
+
+test('offline, the phone top bar still takes two rows', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/?view=week&refresh=1000');
+    await expect(page.getByText('Zahnarzt')).toBeVisible();
+    await page.route('**/api/**', route => route.abort());
+    await expect(page.getByText(/as of \d\d:\d\d/)).toBeVisible({ timeout: 5_000 });
+    const header = await page.locator('header').boundingBox();
+    expect(header!.height).toBeLessThanOrEqual(128);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});

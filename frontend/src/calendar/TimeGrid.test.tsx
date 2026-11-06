@@ -46,4 +46,30 @@ describe('TimeGrid', () => {
         render(<TimeGrid days={week} occurrences={[shared, early]} calendars={calendars} onOpen={() => {}} />);
         expect(screen.getByTestId('time-scroller').scrollTop).toBe(6 * HOUR_PX);
     });
+    it('a hand scroll is kept when the first event syncs in later', () => {
+        const early: Occurrence = { key: 's|1', title: 'Schwimmen', start: '2026-11-03T06:30:00+01:00',
+            end: '2026-11-03T07:30:00+01:00', allDay: false, calendarIds: [1] };
+        const { rerender } = render(<TimeGrid days={week} occurrences={[]} calendars={calendars} onOpen={() => {}} />);
+        const scroller = screen.getByTestId('time-scroller');
+        fireEvent.pointerDown(scroller);
+        scroller.scrollTop = 900;
+        rerender(<TimeGrid days={week} occurrences={[early]} calendars={calendars} onOpen={() => {}} />);
+        expect(scroller.scrollTop).toBe(900);
+    });
+    it('without a hand scroll, an event that syncs in moves the opening position', () => {
+        const early: Occurrence = { key: 's|1', title: 'Schwimmen', start: '2026-11-03T06:30:00+01:00',
+            end: '2026-11-03T07:30:00+01:00', allDay: false, calendarIds: [1] };
+        const { rerender } = render(<TimeGrid days={week} occurrences={[]} calendars={calendars} onOpen={() => {}} />);
+        expect(screen.getByTestId('time-scroller').scrollTop).toBe(7 * HOUR_PX);
+        rerender(<TimeGrid days={week} occurrences={[early]} calendars={calendars} onOpen={() => {}} />);
+        expect(screen.getByTestId('time-scroller').scrollTop).toBe(6 * HOUR_PX);
+    });
+    it('a new scrollKey (back to the week after a while untouched) undoes a hand scroll', () => {
+        const { rerender } = render(<TimeGrid days={week} occurrences={[shared]} calendars={calendars} onOpen={() => {}} scrollKey={0} />);
+        const scroller = screen.getByTestId('time-scroller');
+        fireEvent.pointerDown(scroller);
+        scroller.scrollTop = 900;
+        rerender(<TimeGrid days={week} occurrences={[shared]} calendars={calendars} onOpen={() => {}} scrollKey={1} />);
+        expect(scroller.scrollTop).toBe(7 * HOUR_PX);
+    });
 });

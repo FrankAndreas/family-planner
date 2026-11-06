@@ -24,4 +24,13 @@ describe('LastUpdated', () => {
         const { container } = render(<LastUpdated at={null} />);
         expect(container).toBeEmptyDOMElement();
     });
+    it('a week or more ago shows the date instead of the weekday', () => {
+        render(<LastUpdated at={new Date(2026, 9, 29, 22, 10)} />);
+        expect(screen.getByText('zuletzt aktualisiert 29. Okt. 22:10')).toBeInTheDocument();
+    });
+
+    it('the short form for phones', () => {
+        render(<LastUpdated at={new Date(2026, 10, 6, 13, 5)} short />);
+        expect(screen.getByText('Stand 13:05')).toBeInTheDocument();
+    });
 });

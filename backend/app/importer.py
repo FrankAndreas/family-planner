@@ -5,8 +5,10 @@ Nothing here logs or stores a URL, a password or an exception's message: those c
 
 import logging
 import threading
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import ObjectDeletedError
 
 from . import crypto, models
 from .ics import SeriesData
@@ -77,10 +79,20 @@ def _lock(source_id: int) -> threading.Lock:
 
 def sync_source(db: Session, source: models.Source, force: bool = False) -> None:
     """Import one source now; its error code (or none) is stored on it. One sync per source at a time: a manual
-    "Jetzt aktualisieren" during the scheduler's sync waits for it, then reads what that sync left."""
-    with _lock(source.id):
+    "Jetzt aktualisieren" during the scheduler's sync waits for it and takes its result instead of downloading again."""
+    lock = _lock(source.id)
+    waited_since = None
+    if not lock.acquire(blocking=False):
+        waited_since = datetime.now(UTC)
+        lock.acquire()
+    try:
         db.refresh(source)
+        finished = max((t for t in (source.last_success_at, source.last_error_at) if t is not None), default=None)
+        if waited_since is not None and finished is not None and finished >= waited_since:
+            return
         _sync_source(db, source, force)
+    finally:
+        lock.release()
 
 
 def _sync_source(db: Session, source: models.Source, force: bool) -> None:
@@ -105,5 +117,14 @@ def _sync_source(db: Session, source: models.Source, force: bool) -> None:
 
 
 def sync_all(db: Session, force: bool = False) -> None:
-    for source in db.query(models.Source).order_by(models.Source.id).all():
-        sync_source(db, source, force)
+    for source_id in [row.id for row in db.query(models.Source.id).order_by(models.Source.id)]:
+        source = db.get(models.Source, source_id)
+        if source is None:  # deleted by a parent during this round
+            continue
+        try:
+            sync_source(db, source, force)
+        except ObjectDeletedError:
+            db.rollback()
+        except Exception as error:  # one source must not hold up the others; the type only
+            db.rollback()
+            logger.error("Source %s: sync failed (%s)", source_id, type(error).__name__)

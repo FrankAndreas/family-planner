@@ -22,33 +22,37 @@ type Props = {
 const button = 'min-h-12 min-w-12 rounded-lg px-3 text-base font-medium';
 
 // Below 768 px (phones) the bar takes two rows: ‹ month › … ⚠ ⚙, then Heute and the views with short labels.
+// Offline, a short stamp ("Stand 13:05") takes the place of ⚠. On phones the month title takes the room that is
+// left and truncates, so row 1 can't wrap whatever the font's width.
 // The arrows' group dissolves (max-md:contents) so its buttons can take their places through `order`.
 export default function TopBar({ view, day, problem, lastUpdated, onView, onStep, onToday }: Props) {
     const { t } = useTranslation();
     const locale = useDateLocale();
     return (
         <header className="flex flex-wrap items-center gap-2 border-b border-white/10 px-3 py-2 max-md:gap-1">
-            <h1 className="mr-2 text-xl font-bold max-md:order-2 max-md:mx-1">
-                {format(day, 'LLLL yyyy', { locale })}
+            <h1 className="mr-2 text-xl font-bold max-md:order-2 max-md:mx-1 max-md:min-w-0 max-md:flex-1 max-md:truncate">
+                <span className="max-md:hidden">{format(day, 'LLLL yyyy', { locale })}</span>
+                <span className="md:hidden">{format(day, 'LLL yyyy', { locale })}</span>
                 {view !== 'month' && view !== 'agenda' && (
                     <span className="ml-2 text-base font-medium text-slate-400 max-md:hidden">{t('calendar.week', { n: isoWeek(day) })}</span>
                 )}
             </h1>
             <div className="flex items-center gap-1 max-md:contents">
                 <button type="button" className={`${button} bg-white/5 max-md:order-1`} aria-label={t('calendar.back')} onClick={() => onStep(-1)}>‹</button>
-                <button type="button" className={`${button} bg-white/5 max-md:order-9`} onClick={onToday}>{t('calendar.today')}</button>
+                <button type="button" className={`${button} bg-white/5 max-md:order-9 max-md:px-2`} onClick={onToday}>{t('calendar.today')}</button>
                 <button type="button" className={`${button} bg-white/5 max-md:order-3`} aria-label={t('calendar.forward')} onClick={() => onStep(1)}>›</button>
             </div>
-            <div className="flex-1 max-md:order-4" />
-            <span className="max-md:order-5"><LastUpdated at={lastUpdated} /></span>
+            <div className="flex-1 max-md:hidden" />
+            <span className="max-md:hidden"><LastUpdated at={lastUpdated} /></span>
+            <span className="max-md:order-5 md:hidden"><LastUpdated at={lastUpdated} short /></span>
             {problem && (
-                <span className="text-xl text-amber-400 max-md:order-6" role="img" aria-label={t('calendar.problem')} title={t('calendar.problem')}>⚠</span>
+                <span className={`text-xl text-amber-400 max-md:order-6 ${lastUpdated ? 'max-md:hidden' : ''}`} role="img" aria-label={t('calendar.problem')} title={t('calendar.problem')}>⚠</span>
             )}
             <div className="h-0 basis-full max-md:order-8 md:hidden" />
-            <nav className="flex gap-1 max-md:order-10">
+            <nav className="flex gap-1 max-md:order-10 max-md:min-w-0 max-md:flex-1">
                 {VIEWS.map((v) => (
                     <button key={v} type="button" onClick={() => onView(v)} aria-label={t(`calendar.views.${v}`)}
-                            className={`${button} max-md:px-2 ${v === view ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-200'}`}>
+                            className={`${button} max-md:min-w-0 max-md:flex-1 max-md:px-1 ${v === view ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-200'}`}>
                         <span className="md:hidden">{t(`calendar.viewsShort.${v}`)}</span>
                         <span className="max-md:hidden">{t(`calendar.views.${v}`)}</span>
                     </button>
