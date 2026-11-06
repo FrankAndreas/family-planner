@@ -85,6 +85,13 @@ describe('firstScrollHour', () => {
         expect(firstScrollHour(days(new Date(2026, 10, 6), 1), [])).toBe(7);
     });
 
+    it('a timed event over several days doesn\'t count (it is a bar at the top)', () => {
+        expect(firstScrollHour(shownWeek, [
+            timed('Skilager', '2026-11-02T05:30:00+01:00', '2026-11-06T17:00:00+01:00'),
+            timed('Yoga', '2026-11-04T10:00:00+01:00', '2026-11-04T11:00:00+01:00'),
+        ])).toBe(7);
+    });
+
     it('all-day events and events of other days don\'t count', () => {
         expect(firstScrollHour(days(new Date(2026, 10, 6), 1), [
             { key: 'f|1', title: 'Ferien', start: '2026-11-06', end: '2026-11-07', allDay: true, calendarIds: [1] },

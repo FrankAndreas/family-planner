@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/check-css.mjs",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0 && npm run check-texts",
     "preview": "vite preview",
     "type-check": "tsc -b",
