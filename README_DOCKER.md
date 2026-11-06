@@ -21,10 +21,10 @@ about 80 MB.
 
 1. **Choose the user the app runs as:** the DSM user of the other family apps, e.g. `id familyapps` →
    `uid=1031 gid=100`. Without one, the image's own user (999:999).
-2. **Prepare the folder** `/volume1/docker/familyplanner`, upload `docker-compose.yml` into it **renamed to
+2. **Prepare the folder** `/volume1/docker/family-planner`, upload `docker-compose.yml` into it **renamed to
    `compose.yaml`**, and create the data folder for that user:
    ```bash
-   cd /volume1/docker/familyplanner
+   cd /volume1/docker/family-planner
    sudo mkdir -p data secrets
    sudo chown -R 1031:100 data
    ```
@@ -97,7 +97,7 @@ error page.
 - **Update:** automatically with `nas-update.sh` (below), or by hand: `sudo docker-compose pull && sudo docker-compose
   up -d`. Migrations run at start, after an automatic backup (`data/backups/planner-before-migration-*.db`).
 - **Backups:** every night after 03:00 to `data/backups/planner-nightly-*.db`, the newest 14 kept. Hyper Backup on
-  `docker/familyplanner` covers them.
+  `docker/family-planner` covers them.
 - **Restore:** `compose.yaml` + `.env` + `secrets/enc_key` + the `data` folder, on any Docker host.
 
 ## Automatic updates
@@ -106,15 +106,15 @@ error page.
 the database to `db-backups/`, keeps the old images as `:previous`, restarts and waits until the backend is healthy
 (`logs/update.log`).
 
-1. Copy `scripts/nas-update.sh` into `/volume1/docker/familyplanner` and make it executable (or let
+1. Copy `scripts/nas-update.sh` into `/volume1/docker/family-planner` and make it executable (or let
    `scripts/deploy-nas.sh` upload it):
    ```bash
-   sudo chmod +x /volume1/docker/familyplanner/nas-update.sh
-   sudo /volume1/docker/familyplanner/nas-update.sh     # should end with "Up to date" or "Update complete"
+   sudo chmod +x /volume1/docker/family-planner/nas-update.sh
+   sudo /volume1/docker/family-planner/nas-update.sh     # should end with "Up to date" or "Update complete"
    ```
 2. **Control Panel → Task Scheduler → Create → Scheduled Task → User-defined script**: user **root**, daily a few
    minutes apart from the other apps (not at 03:00, when the planner makes its own nightly backup), command
-   `bash /volume1/docker/familyplanner/nas-update.sh`.
+   `bash /volume1/docker/family-planner/nas-update.sh`.
 
 To deploy right away from your computer:
 ```bash
@@ -127,7 +127,7 @@ scripts/deploy-nas.sh
 First **disable the scheduled task**, otherwise the next night installs the same version again. Then:
 
 ```bash
-cd /volume1/docker/familyplanner
+cd /volume1/docker/family-planner
 sudo docker tag ghcr.io/frankandreas/family-planner/backend:previous ghcr.io/frankandreas/family-planner/backend:latest
 sudo docker tag ghcr.io/frankandreas/family-planner/frontend:previous ghcr.io/frankandreas/family-planner/frontend:latest
 sudo docker stop planner-backend
