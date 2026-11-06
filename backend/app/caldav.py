@@ -38,7 +38,7 @@ def _request(client: httpx.Client, method: str, url: str, body: str, depth: str)
     try:
         response = client.request(method, url, content=body.encode(),
                                   headers={"Depth": depth, "Content-Type": "application/xml; charset=utf-8"})
-    except (httpx.HTTPError, ValueError):
+    except (httpx.HTTPError, httpx.InvalidURL, ValueError):
         raise SourceError("source_unreachable") from None
     if response.status_code >= 400:
         raise http_error(response.status_code) from None

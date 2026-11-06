@@ -69,7 +69,7 @@ def _apply(db: Session, people: list[hub.HubPerson]) -> None:
             row = models.Person(hub_id=person.id)
             db.add(row)
         row.name = person.name
-        row.role = models.Role(person.role)
+        row.role = models.Role.from_hub(person.role)
         row.color = person.color
         row.language = person.language if person.language in ("de", "en") else None
         row.is_active = True

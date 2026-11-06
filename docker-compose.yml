@@ -36,6 +36,8 @@ services:
       - TZ=${TZ:-Europe/Zurich}
     mem_limit: 256m
     restart: unless-stopped
+    # On stop the backend lets a running calendar sync finish (up to 30 s) before it exits
+    stop_grace_period: 40s
     healthcheck:
       test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1" ]
       interval: 30s

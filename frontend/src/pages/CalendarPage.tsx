@@ -10,6 +10,7 @@ import EventSheet from '../calendar/EventSheet';
 import { days, isoDate, parseMoment, weekStart } from '../calendar/dates';
 import { useCalendarData } from '../calendar/useCalendarData';
 import { useIdleReturn } from '../calendar/useIdleReturn';
+import { useNightlyReload } from '../calendar/useNightlyReload';
 import MonthGrid from '../calendar/MonthGrid';
 import Agenda from '../calendar/Agenda';
 
@@ -37,7 +38,9 @@ export default function CalendarPage() {
     const dateParam = params.get('date');
     const day = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? parseMoment(dateParam) : startOfDay(new Date());
     const [open, setOpen] = useState<Occurrence | null>(null);
-    const { occurrences, calendars, failed } = useCalendarData(view, day);
+    // The browser tests shorten the refresh with ?refresh=<ms>
+    const refreshMs = Number(params.get('refresh')) || undefined;
+    const { occurrences, calendars, failed, loadedAt } = useCalendarData(view, day, refreshMs);
 
     useEffect(() => {
         fetchConfig().then((config) => applyLanguage(config.language)).catch(() => {});
@@ -58,13 +61,15 @@ export default function CalendarPage() {
         go({ view: 'week', day: null });
     }, [go]);
     useIdleReturn(idleMs, onWall, backToWeek);
+    useNightlyReload(onWall);
 
     const problem = failed || [...calendars.values()].some((c) => !c.ok);
     const shownDays = view === 'day' ? days(day, 1) : view === '3day' ? days(day, 3) : days(weekStart(day), 7);
 
     return (
         <div className="flex h-dvh flex-col">
-            <TopBar view={view} day={day} problem={problem} onView={(v) => go({ view: v })}
+            <TopBar view={view} day={day} problem={problem} lastUpdated={failed ? loadedAt : null}
+                    onView={(v) => go({ view: v })}
                     onStep={(direction) => go({ day: step(view, day, direction) })} onToday={() => go({ day: null })} />
             <main className="min-h-0 flex-1">
                 {view === 'month' ? (

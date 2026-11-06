@@ -36,9 +36,9 @@ class ICloudIn(BaseModel):
 
 class SourcePatch(BaseModel):
     name: Name | None = None
-    url: str | None = None
-    apple_id: str | None = None
-    password: str | None = None
+    url: Annotated[str, Field(min_length=1, max_length=2000)] | None = None
+    apple_id: Annotated[str, Field(min_length=3, max_length=200)] | None = None
+    password: Annotated[str, Field(min_length=1, max_length=200)] | None = None
 
 
 class CalendarPatch(BaseModel):

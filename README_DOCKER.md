@@ -87,6 +87,11 @@ a failing source keeps its last events, and the wall shows a small ⚠.
 
 Later a Raspberry Pi with a touch screen: Chromium in kiosk mode on the same `/display` address.
 
+**When the NAS is off** (an update, a restart, a power cut): leave the iPad on the page. It keeps showing the last
+loaded week with "zuletzt aktualisiert HH:MM" and picks up again by itself once the NAS answers. Once a night, around
+03:00, the wall reloads itself to get a new version, but only when the NAS answers, so it never ends up on Safari's
+error page.
+
 ## Updating, backups, restore
 
 - **Update:** `sudo docker-compose pull && sudo docker-compose up -d`. Migrations run at start, after an automatic

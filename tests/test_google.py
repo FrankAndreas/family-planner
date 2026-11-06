@@ -141,3 +141,11 @@ def test_successful_sync_logs_no_secret(db, web, caplog):
     web.set(URL, ONE)
     importer.sync_source(db, add_source(db))
     assert "s3cr3t" not in caplog.text
+
+
+def test_invalid_url_is_source_invalid(web):
+    from app import google
+
+    with pytest.raises(importer.SourceError) as error:
+        google.check("https://exa mple.com/\x00.ics")
+    assert error.value.code == "source_invalid"

@@ -4,6 +4,7 @@ sees a half-updated calendar; a failing source keeps its last good events and an
 Nothing here logs or stores a URL, a password or an exception's message: those can carry the secret address."""
 
 import logging
+import threading
 
 from sqlalchemy.orm import Session
 
@@ -65,8 +66,24 @@ def credential(source: models.Source) -> str:
         raise SourceError("source_key") from None
 
 
+_locks: dict[int, threading.Lock] = {}
+_locks_guard = threading.Lock()
+
+
+def _lock(source_id: int) -> threading.Lock:
+    with _locks_guard:
+        return _locks.setdefault(source_id, threading.Lock())
+
+
 def sync_source(db: Session, source: models.Source, force: bool = False) -> None:
-    """Import one source now; its error code (or none) is stored on it."""
+    """Import one source now; its error code (or none) is stored on it. One sync per source at a time: a manual
+    "Jetzt aktualisieren" during the scheduler's sync waits for it, then reads what that sync left."""
+    with _lock(source.id):
+        db.refresh(source)
+        _sync_source(db, source, force)
+
+
+def _sync_source(db: Session, source: models.Source, force: bool) -> None:
     from . import caldav, google
 
     module = google if source.kind == "google_ical" else caldav

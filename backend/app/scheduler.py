@@ -13,8 +13,12 @@ logger = logging.getLogger(__name__)
 
 SYNC_SECONDS = 300
 BACKUP_AT = time(3, 0)
+# How long stop() waits for a running sync (a download may take up to fetch.TIMEOUT_SECONDS per request); the
+# compose file's stop_grace_period is longer
+STOP_TIMEOUT_SECONDS = 30
 
 _task: asyncio.Task | None = None
+_stopping: asyncio.Event | None = None
 
 
 def _sync_all() -> None:
@@ -26,9 +30,9 @@ def backup_due(now: datetime, last_day) -> bool:
     return now.time() >= BACKUP_AT and now.date() != last_day
 
 
-async def _loop() -> None:
+async def _loop(stopping: asyncio.Event) -> None:
     last_backup = backup.last_nightly_day()
-    while True:
+    while not stopping.is_set():
         try:
             await run_in_threadpool(_sync_all)
         except Exception as error:  # never let the loop die; the type only, messages may carry addresses
@@ -40,17 +44,27 @@ async def _loop() -> None:
                 last_backup = now.date()
             except Exception as error:
                 logger.error("Backup failed: %s", type(error).__name__)
-        await asyncio.sleep(SYNC_SECONDS)
+        try:
+            await asyncio.wait_for(stopping.wait(), SYNC_SECONDS)
+        except TimeoutError:
+            pass
 
 
 def start() -> None:
-    global _task
+    global _task, _stopping
     if config.env("SYNC_DISABLED") != "1" and _task is None:
-        _task = asyncio.get_running_loop().create_task(_loop())
+        _stopping = asyncio.Event()
+        _task = asyncio.get_running_loop().create_task(_loop(_stopping))
 
 
 async def stop() -> None:
-    global _task
-    if _task is not None:
-        _task.cancel()
-        _task = None
+    """Let a running sync finish (its import is one transaction either way), then end the loop."""
+    global _task, _stopping
+    if _task is None:
+        return
+    task, _task = _task, None
+    _stopping.set()
+    try:
+        await asyncio.wait_for(asyncio.shield(task), STOP_TIMEOUT_SECONDS)
+    except TimeoutError:
+        task.cancel()

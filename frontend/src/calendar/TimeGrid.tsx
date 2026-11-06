@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { format, isSameDay, isToday } from 'date-fns';
 import type { CalendarInfo, Occurrence } from '../types';
-import { allDayBars, layoutTimed } from './layout';
+import { allDayBars, firstScrollHour, layoutTimed } from './layout';
 import { Stripes } from './EventBlock';
 import { colorsOf, fill } from './colors';
 import { useDateLocale } from './locale';
@@ -9,7 +9,6 @@ import { useDateLocale } from './locale';
 // Pixels per hour: a 30-minute event still has room for an 18 px title
 export const HOUR_PX = 56;
 const BAR_PX = 40;
-const FIRST_VISIBLE_HOUR = 7;
 
 type Props = {
     days: Date[];
@@ -35,12 +34,17 @@ export default function TimeGrid({ days, occurrences, calendars, onOpen }: Props
     const barRows = bars.reduce((rows, bar) => Math.max(rows, bar.row + 1), 0);
     const columns = `3.5rem repeat(${days.length}, minmax(0, 1fr))`;
 
-    // On load the morning, or the hour before now when today is shown
-    const showsToday = days.some((day) => isToday(day));
+    // Opens at the morning's first event (at the latest 07:00); again only when other days are shown, not on every
+    // refresh, so a hand that scrolled isn't undone
+    const firstHour = firstScrollHour(days, occurrences);
+    const shownDays = days.map((day) => day.getTime()).join();
+    const scrolledFor = useRef<string | null>(null);
     useEffect(() => {
-        const hour = showsToday ? Math.max(0, new Date().getHours() - 1) : FIRST_VISIBLE_HOUR;
-        if (scroller.current) scroller.current.scrollTop = Math.min(hour, FIRST_VISIBLE_HOUR + 6) * HOUR_PX;
-    }, [showsToday, days.length]);
+        if (!scroller.current || scrolledFor.current === shownDays) return;
+        scroller.current.scrollTop = firstHour * HOUR_PX;
+        // Before the events are loaded the first position is a guess: scroll again once they are there
+        if (occurrences.length) scrolledFor.current = shownDays;
+    }, [shownDays, firstHour, occurrences.length]);
 
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -71,7 +75,7 @@ export default function TimeGrid({ days, occurrences, calendars, onOpen }: Props
                     );
                 })}
             </div>
-            <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+            <div ref={scroller} data-testid="time-scroller" className="min-h-0 flex-1 overflow-y-auto">
                 <div className="relative grid" style={{ gridTemplateColumns: columns, height: 24 * HOUR_PX }}>
                     <div className="relative">
                         {Array.from({ length: 24 }, (_, hour) => (

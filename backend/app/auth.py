@@ -58,7 +58,7 @@ def _resolve(request: Request, db: Session) -> models.Person:
         hub_people.refresh(db, login)
         row = _active(db, person.id)
         # Given access a moment ago, or the role or name changed: the people kept here are older than that
-        if row is None or row.role != models.Role(person.role) or row.name != person.name:
+        if row is None or row.role != models.Role.from_hub(person.role) or row.name != person.name:
             hub_people.refresh(db, login, force=True)
             row = _active(db, person.id)
     except hub.HubUnavailable as error:

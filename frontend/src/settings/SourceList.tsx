@@ -61,7 +61,7 @@ export default function SourceList({ sources, people, familyColor, onChanged }: 
                                 {t('settings.credentialStored')}
                                 {' · '}
                                 {source.last_success_at
-                                    ? t('settings.lastSync', { time: format(new Date(`${source.last_success_at}Z`), 'dd.MM.yyyy HH:mm') })
+                                    ? t('settings.lastSync', { time: format(new Date(source.last_success_at), 'dd.MM.yyyy HH:mm') })
                                     : t('settings.neverSynced')}
                             </p>
                             {source.last_error && <p className="mt-1 text-base text-amber-400">{sourceError(source.last_error)}</p>}

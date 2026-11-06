@@ -111,3 +111,14 @@ def test_a_bad_stored_series_does_not_break_the_wall(client, db):
     db.add(models.Series(calendar_id=calendar.id, uid="bad@test", ics=broken, first_start=models.utcnow().replace(year=2026, month=11, day=1)))
     db.commit()
     assert [e["title"] for e in events(client)] == ["Elternabend"]
+
+
+def test_calendars_and_config_times_carry_utc(client, db):
+    from calendars import FUSSBALL
+    from helpers import add_calendar
+
+    add_calendar(db, FUSSBALL)
+    db.commit()
+    [calendar] = client.get("/api/calendars").json()
+    assert calendar["last_success_at"].endswith("+00:00")
+    assert client.get("/api/config").json()["synced_at"].endswith("+00:00")
