@@ -38,7 +38,8 @@ async def _loop(stopping: asyncio.Event) -> None:
         except Exception as error:  # never let the loop die; the type only, messages may carry addresses
             logger.error("Sync failed: %s", type(error).__name__)
         now = datetime.now(config.tz())
-        if backup_due(now, last_backup):
+        # A stop during the night's sync leaves the backup to the next start (backup.last_nightly_day())
+        if not stopping.is_set() and backup_due(now, last_backup):
             try:
                 await run_in_threadpool(backup.nightly)
                 last_backup = now.date()
@@ -68,3 +69,5 @@ async def stop() -> None:
         await asyncio.wait_for(asyncio.shield(task), STOP_TIMEOUT_SECONDS)
     except TimeoutError:
         task.cancel()
+    except Exception as error:  # the loop had died already; shutting down goes on
+        logger.error("The sync loop had stopped: %s", type(error).__name__)
