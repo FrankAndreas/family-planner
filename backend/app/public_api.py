@@ -1,6 +1,6 @@
 """What the screens read, without a login (home only: main.py refuses requests from outside)."""
 
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func
@@ -58,7 +58,11 @@ def calendars(db: Session = Depends(database.get_db)):
 
 @router.get("/config")
 def public_config(db: Session = Depends(database.get_db)):
+    # max() comes back as SQLite's text, past the column's type
     synced = db.query(func.max(models.Source.last_success_at)).scalar()
+    if isinstance(synced, str):
+        synced = datetime.fromisoformat(synced)
+    synced = models.as_utc(synced)
     return {"language": config.default_language(), "family_color": get_settings(db).family_color, "synced_at": synced}
 
 

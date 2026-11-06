@@ -189,3 +189,9 @@ def test_source_patch_limits(client, web, field, value):
     response = client.patch(f"/api/sources/{source_id}", json={field: value}, headers=login())
     assert response.status_code == 422
     assert isinstance(response.json()["detail"], list)  # refused by validation, before any source check
+
+
+def test_sync_times_carry_utc(client, web):
+    add_google(client, web)
+    [source] = client.get("/api/sources", headers=login()).json()
+    assert source["last_success_at"].endswith("+00:00")

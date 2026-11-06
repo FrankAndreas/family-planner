@@ -5,12 +5,35 @@ from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator
 
 from .database import Base
 
 
 def utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
+
+
+def as_utc(value: datetime | None) -> datetime | None:
+    """A stored naive-UTC time as an aware one, so the API sends it with "+00:00" and browsers read it right."""
+    if value is None or value.tzinfo is not None:
+        return value
+    return value.replace(tzinfo=UTC)
+
+
+class UtcDateTime(TypeDecorator):
+    """A UTC moment kept as naive UTC (as before, no migration) and read back aware."""
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        return value
+
+    def process_result_value(self, value, dialect):
+        return as_utc(value)
 
 
 class Role(str, enum.Enum):
@@ -57,10 +80,10 @@ class Source(Base):
     base_url = Column(String(500))
     # Google: SHA-256 of the last downloaded feed; unchanged means nothing to import
     content_hash = Column(String(64))
-    last_success_at = Column(DateTime)
+    last_success_at = Column(UtcDateTime)
     # An error code (source_auth, source_not_found, source_unreachable, source_invalid), never a message
     last_error = Column(String(40))
-    last_error_at = Column(DateTime)
+    last_error_at = Column(UtcDateTime)
 
     calendars = relationship("Calendar", back_populates="source", cascade="all, delete-orphan", passive_deletes=True)
 
