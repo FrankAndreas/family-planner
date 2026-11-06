@@ -94,11 +94,48 @@ error page.
 
 ## Updating, backups, restore
 
-- **Update:** `sudo docker-compose pull && sudo docker-compose up -d`. Migrations run at start, after an automatic
-  backup (`data/backups/planner-before-migration-*.db`).
+- **Update:** automatically with `nas-update.sh` (below), or by hand: `sudo docker-compose pull && sudo docker-compose
+  up -d`. Migrations run at start, after an automatic backup (`data/backups/planner-before-migration-*.db`).
 - **Backups:** every night after 03:00 to `data/backups/planner-nightly-*.db`, the newest 14 kept. Hyper Backup on
   `docker/familyplanner` covers them.
 - **Restore:** `compose.yaml` + `.env` + `secrets/enc_key` + the `data` folder, on any Docker host.
+
+## Automatic updates
+
+`scripts/nas-update.sh` works as in the other family apps: it pulls the images and, if there is a new one, backs up
+the database to `db-backups/`, keeps the old images as `:previous`, restarts and waits until the backend is healthy
+(`logs/update.log`).
+
+1. Copy `scripts/nas-update.sh` into `/volume1/docker/familyplanner` and make it executable (or let
+   `scripts/deploy-nas.sh` upload it):
+   ```bash
+   sudo chmod +x /volume1/docker/familyplanner/nas-update.sh
+   sudo /volume1/docker/familyplanner/nas-update.sh     # should end with "Up to date" or "Update complete"
+   ```
+2. **Control Panel → Task Scheduler → Create → Scheduled Task → User-defined script**: user **root**, daily a few
+   minutes apart from the other apps (not at 03:00, when the planner makes its own nightly backup), command
+   `bash /volume1/docker/familyplanner/nas-update.sh`.
+
+To deploy right away from your computer:
+```bash
+cp .deploy.env.example .deploy.env   # once; then set NAS_HOST and NAS_DIR
+scripts/deploy-nas.sh
+```
+
+### Rolling back an update
+
+First **disable the scheduled task**, otherwise the next night installs the same version again. Then:
+
+```bash
+cd /volume1/docker/familyplanner
+sudo docker tag ghcr.io/frankandreas/family-planner/backend:previous ghcr.io/frankandreas/family-planner/backend:latest
+sudo docker tag ghcr.io/frankandreas/family-planner/frontend:previous ghcr.io/frankandreas/family-planner/frontend:latest
+sudo docker stop planner-backend
+# Only if the new version changed the database: put the backup from before the update back
+sudo rm -f data/planner.db-wal data/planner.db-shm
+sudo sh -c 'gunzip -c db-backups/planner-YYYYMMDD-HHMMSS.sqlite.gz > data/planner.db'
+sudo docker-compose up -d backend frontend
+```
 
 ## How fast changes arrive
 
