@@ -6,7 +6,7 @@ get this far: main.py refuses everything that carries Cf-Connecting-Ip."""
 
 import logging
 
-from fastapi import Depends, Request, status
+from fastapi import Depends, Request, Response, status
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
@@ -21,6 +21,7 @@ COOKIE = "hub_session"
 CSRF_HEADER = "X-Requested-With"
 CSRF_VALUE = "planner"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+RENEW_HEADER = "X-Hub-Renew"
 
 
 def request_login(request: Request) -> tuple[hub.Login | None, bool]:
@@ -42,18 +43,20 @@ def _active(db: Session, hub_id: int) -> models.Person | None:
     return db.query(models.Person).filter(models.Person.hub_id == hub_id, models.Person.is_active.is_(True)).first()
 
 
-def _resolve(request: Request, db: Session) -> models.Person:
-    """The person behind the request's login. Blocking (the hub, the database): runs in a worker thread."""
+def _resolve(request: Request, db: Session) -> tuple[models.Person, bool]:
+    """The person behind the request's login, and whether the hub login asks to be renewed. Blocking (the hub, the
+    database): runs in a worker thread."""
     login, from_cookie = request_login(request)
     if login is None:
         raise _not_logged_in()
     if from_cookie and request.method not in SAFE_METHODS and request.headers.get(CSRF_HEADER) != CSRF_VALUE:
         raise api_error(status.HTTP_403_FORBIDDEN, "csrf")
     try:
-        person, access = hub.session(login)
+        session = hub.client.session(login)
+        person = session.person
         if person is None:
             raise _not_logged_in()
-        if not access:
+        if not session.access:
             raise api_error(status.HTTP_403_FORBIDDEN, "no_access")
         hub_people.refresh(db, login)
         row = _active(db, person.id)
@@ -61,16 +64,27 @@ def _resolve(request: Request, db: Session) -> models.Person:
         if row is None or row.role != models.Role.from_hub(person.role) or row.name != person.name:
             hub_people.refresh(db, login, force=True)
             row = _active(db, person.id)
+        if row is None:
+            # Another request of theirs was refreshing at the same moment: wait for it, then look again (app
+            # integration review 2026-11-07)
+            hub_people.wait_for_running(hub.TIMEOUT_SECONDS)
+            row = _active(db, person.id)
     except hub.HubUnavailable as error:
         logger.warning("The family hub can't be reached (%s)", error)
         raise api_error(status.HTTP_503_SERVICE_UNAVAILABLE, "hub_unavailable") from None
     if row is None:
         raise api_error(status.HTTP_403_FORBIDDEN, "no_access")
-    return row
+    return row, session.renew
 
 
-async def get_current_user(request: Request, db: Session = Depends(database.get_db)) -> models.Person:
-    return await run_in_threadpool(_resolve, request, db)
+async def get_current_user(
+    request: Request, response: Response, db: Session = Depends(database.get_db)
+) -> models.Person:
+    person, renew = await run_in_threadpool(_resolve, request, db)
+    if renew:
+        # The hub login is in its last week: the page sends the browser once through the hub, which renews it
+        response.headers[RENEW_HEADER] = "1"
+    return person
 
 
 def require_parent(person: models.Person = Depends(get_current_user)) -> models.Person:

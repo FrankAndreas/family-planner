@@ -14,7 +14,9 @@ family-chore, family-meal-planner, ...), same stack and look. German by default,
 - **Up to date:** every source is read every 5 minutes; a change in Google or iCloud reaches the wall within about
   10 minutes (Google's feed itself may lag behind).
 - **Settings for parents:** add and remove sources, say whose each calendar is, colours, shown or hidden, and see when
-  each source last updated. The login is the family hub's.
+  each source last updated. The login is the family hub's, asked through family-hub's client package
+  (`family-hub-client`, pinned to a commit in `backend/requirements.txt`); a login in its last week is renewed by one
+  trip through the hub.
 - **Credentials stay secret:** secret addresses and app passwords are encrypted (AES-256-GCM) with a key of your own,
   never logged and never sent to a browser.
 - **Home only:** the planner answers nothing that comes through the Cloudflare tunnel.

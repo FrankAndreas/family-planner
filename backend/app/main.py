@@ -19,7 +19,9 @@ except crypto.KeyMissing as error:
 # Create or upgrade the schema (Alembic migrations in app/migrations)
 database_setup.setup(database.engine)
 
-logger.info("Family hub: %s (logins at %s, app key %s)", hub.hub_url(), hub.public_url(), hub.app_key())
+logger.info(
+    "Family hub: %s (logins at %s, app key %s)", hub.client.hub_url(), hub.client.public_url(), hub.client.app_key()
+)
 
 
 

@@ -23,6 +23,7 @@ export default function SettingsPage() {
         (async () => {
             try {
                 const me = await getMe();
+                if (!me) return;
                 applyLanguage(me.language === 'en' ? 'en' : 'de');
                 if (me.role !== 'PARENT') {
                     setState({ kind: 'blocked', code: 'parents_only' });

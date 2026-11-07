@@ -69,4 +69,4 @@ def public_config(db: Session = Depends(database.get_db)):
 @router.get("/hub")
 def hub_links():
     """Where browsers log in (the family hub at home) and out (the hub's logout ends it for every family app)."""
-    return {"login_url": hub.public_url(), "logout_url": f"{hub.public_url()}/logout"}
+    return {"login_url": hub.client.public_url(), "logout_url": f"{hub.client.public_url()}/logout"}
