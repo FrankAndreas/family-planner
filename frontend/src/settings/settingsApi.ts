@@ -1,4 +1,4 @@
-import api from '../api';
+import api, { renewsAtHub } from '../api';
 
 // The parents' settings API (all need the hub login as a parent). Credentials go in and never come back
 
@@ -18,7 +18,11 @@ export type NewSource =
     | { kind: 'icloud_caldav'; name: string; apple_id: string; password: string };
 export type SourceChange = { name?: string; url?: string; apple_id?: string; password?: string };
 
-export const getMe = async () => (await api.get<Person & { role: string }>('/api/me')).data;
+// Who is logged in; null while on the way through the hub, which renews a login in its last week (renewsAtHub)
+export const getMe = async () => {
+    const found = await api.get<Person & { role: string }>('/api/me');
+    return renewsAtHub(found.headers) ? null : found.data;
+};
 export const getSources = async () => (await api.get<Source[]>('/api/sources')).data;
 export const getPeople = async () => (await api.get<Person[]>('/api/people')).data;
 export const addSource = async (body: NewSource) => (await api.post<Source>('/api/sources', body)).data;

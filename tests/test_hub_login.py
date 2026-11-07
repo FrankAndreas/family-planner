@@ -1,7 +1,10 @@
+import threading
+import time
+
 import pytest
 
 import fake_hub
-from app import models
+from app import database, hub, hub_people, models
 from helpers import ADMIN, bearer, login
 
 COLOR = {"family_color": "#112233"}
@@ -90,3 +93,35 @@ def test_unknown_hub_role_counts_as_child(client, family_hub):
     response = client.get("/api/sources", headers=login("Gast"))
     assert response.status_code == 403 and response.json()["detail"] == "parents_only"
     assert "Gast" in [p["name"] for p in client.get("/api/people", headers=login()).json()]
+
+
+# App integration review 2026-11-07: someone who only opens the planner never opens the hub, which renews a login. In
+# its last week the hub says so, and the settings page sends the browser through the hub once (frontend api.ts)
+def test_a_login_in_its_last_week_is_renewed_through_the_hub(client, family_hub):
+    assert "X-Hub-Renew" not in client.get("/api/me", headers=login()).headers
+    family_hub.renewing.add(ADMIN)
+    hub.client.forget()
+    assert client.get("/api/me", headers=login()).headers["X-Hub-Renew"] == "1"
+
+
+# App integration review 2026-11-07 (as in the budget app): the first requests of someone given access come together;
+# the one that finds another refreshing waits for it instead of answering "no access"
+def test_a_new_persons_requests_at_the_same_moment(client, family_hub):
+    family_hub.add("Mama", "PARENT")
+    with hub_people._lock:
+        hub_people._running = True
+
+    def the_other_request():
+        time.sleep(0.2)
+        with database.SessionLocal() as db:
+            hub_people._apply(db, hub.client.fetch_people(hub.Login(fake_hub.token("Mama"))))
+        with hub_people._lock:
+            hub_people._running = False
+            hub_people._lock.notify_all()
+
+    other = threading.Thread(target=the_other_request)
+    other.start()
+    try:
+        assert client.get("/api/me", headers=login("Mama")).status_code == 200
+    finally:
+        other.join()
