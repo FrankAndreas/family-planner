@@ -27,7 +27,7 @@ export default function CalendarRow({ calendar, people, familyColor, canEnable, 
             <span className="min-w-32 flex-1 text-base">{calendar.name}</span>
             <label className="text-sm text-slate-400">
                 {t('settings.whose')}
-                <select className="ml-2 min-h-12 rounded-lg border border-white/10 bg-slate-800 px-2 text-base text-slate-100"
+                <select className="ml-2 min-h-12 rounded-lg border border-slate-500 bg-slate-800 px-2 text-base text-slate-100"
                         value={calendar.person_id ?? ''} disabled={!calendar.enabled}
                         onChange={(e) => onChange({ person_id: e.target.value ? Number(e.target.value) : null })}>
                     <option value="">{t('settings.family')}</option>

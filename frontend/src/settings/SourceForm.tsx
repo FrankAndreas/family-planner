@@ -5,7 +5,7 @@ import { addSource, changeSource, type NewSource, type Source } from './settings
 
 type Props = { source?: Source; onSaved: (source: Source) => void; onCancel: () => void };
 
-const field = 'mt-1 block min-h-12 w-full rounded-lg border border-white/10 bg-slate-800 px-3 text-base';
+const field = 'mt-1 block min-h-12 w-full rounded-lg border border-slate-500 bg-slate-800 px-3 text-base';
 
 // Adding a source, or giving an existing one a new address or password. The credential is tried before it is saved
 export default function SourceForm({ source, onSaved, onCancel }: Props) {
