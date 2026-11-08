@@ -32,7 +32,7 @@ export default defineConfig({
     projects: [
         // The wall: an iPad in landscape
         { name: 'tablet', testIgnore: /phone\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1180, height: 820 }, hasTouch: true } },
-        { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /phone\.spec\.ts/ },
+        { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /(phone|accessibility)\.spec\.ts/ },
     ],
     webServer: [
         {

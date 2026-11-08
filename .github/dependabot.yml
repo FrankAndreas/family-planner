@@ -89,6 +89,12 @@ updates:
       include: "scope"
     assignees:
       - "FrankAndreas"
+    groups:
+      # playwright-core is pinned to @playwright/test's version, so axe uses the same Playwright
+      playwright:
+        patterns:
+          - "@playwright/test"
+          - "playwright-core"
 
   - package-ecosystem: "github-actions"
     directory: "/"

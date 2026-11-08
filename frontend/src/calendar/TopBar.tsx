@@ -51,10 +51,12 @@ export default function TopBar({ view, day, problem, lastUpdated, onView, onStep
             <div className="h-0 basis-full max-md:order-8 md:hidden" />
             <nav className="flex gap-1 max-md:order-10 max-md:min-w-0 max-md:flex-1">
                 {VIEWS.map((v) => (
-                    <button key={v} type="button" onClick={() => onView(v)} aria-label={t(`calendar.views.${v}`)}
-                            className={`${button} max-md:min-w-0 max-md:flex-1 max-md:px-1 ${v === view ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-200'}`}>
-                        <span className="md:hidden">{t(`calendar.viewsShort.${v}`)}</span>
-                        <span className="max-md:hidden">{t(`calendar.views.${v}`)}</span>
+                    // The view shown: said to screen readers too (aria-pressed), not only by its colour. The name is the
+                    // long label (the phone's short one is only for the eye); indigo-600: white on it 6.3:1
+                    <button key={v} type="button" onClick={() => onView(v)} aria-pressed={v === view}
+                            className={`${button} max-md:min-w-0 max-md:flex-1 max-md:px-1 ${v === view ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-200'}`}>
+                        <span className="md:hidden" aria-hidden="true">{t(`calendar.viewsShort.${v}`)}</span>
+                        <span className="max-md:sr-only">{t(`calendar.views.${v}`)}</span>
                     </button>
                 ))}
             </nav>

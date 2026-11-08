@@ -6,6 +6,7 @@ import { applyLanguage } from '../i18n';
 import SourceForm from '../settings/SourceForm';
 import SourceList from '../settings/SourceList';
 import ColorInput from '../settings/ColorInput';
+import { usePageTitle } from '../pageTitle';
 import { getMe, getPeople, getSources, setFamilyColor, type Person, type Source } from '../settings/settingsApi';
 
 type State =
@@ -15,6 +16,7 @@ type State =
 
 export default function SettingsPage() {
     const { t } = useTranslation();
+    usePageTitle(t('settings.title'));
     const [state, setState] = useState<State>({ kind: 'loading' });
     const [adding, setAdding] = useState(false);
     const [hubUrl, setHubUrl] = useState<string | null>(null);

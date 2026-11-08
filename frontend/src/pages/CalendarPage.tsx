@@ -13,6 +13,7 @@ import { useIdleReturn } from '../calendar/useIdleReturn';
 import { useNightlyReload } from '../calendar/useNightlyReload';
 import MonthGrid from '../calendar/MonthGrid';
 import Agenda from '../calendar/Agenda';
+import { usePageTitle } from '../pageTitle';
 
 // Back to this week's week view after 3 minutes untouched (on the wall)
 export const IDLE_MS = 180_000;
@@ -31,6 +32,7 @@ function step(view: View, day: Date, direction: -1 | 1): Date {
 }
 
 export default function CalendarPage() {
+    usePageTitle(null);
     const [params, setParams] = useSearchParams();
     const { pathname } = useLocation();
     const onWall = pathname === '/display';

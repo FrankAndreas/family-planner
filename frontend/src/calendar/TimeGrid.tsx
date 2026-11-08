@@ -85,7 +85,7 @@ export default function TimeGrid({ days, occurrences, calendars, onOpen, scrollK
                 <div className="relative grid" style={{ gridTemplateColumns: columns, height: 24 * HOUR_PX }}>
                     <div className="relative">
                         {Array.from({ length: 24 }, (_, hour) => (
-                            <div key={hour} className="absolute right-2 text-sm text-slate-500"
+                            <div key={hour} className="absolute right-2 text-sm text-slate-400"
                                  style={{ top: hour * HOUR_PX - 8 }}>
                                 {hour > 0 ? `${String(hour).padStart(2, '0')}:00` : ''}
                             </div>
