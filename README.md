@@ -44,6 +44,10 @@ cd e2e && npm install && E2E_PYTHON=../venv/bin/python npm test
 The repository is public: tests and docs use invented people and placeholders (`<domain>`, `<NAS_IP>`), never a real
 calendar address.
 
+## Pre-commit checks
+
+`.githooks/pre-commit` runs the fast checks CI runs (lint, types) for the parts a commit touches. `npm install` in `frontend/` enables it; or once per clone: `git config core.hooksPath .githooks`. Skip once with `git commit --no-verify`.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
